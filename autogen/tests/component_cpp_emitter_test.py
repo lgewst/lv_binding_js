@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 위젯 구현 생성기의 명세 반영, 미지원 처리, 실행 옵션을 검사.
+# Check manifest handling, unsupported inputs, and CLI options for component generation.
 
 import copy
 import io
@@ -18,7 +18,7 @@ import widget_cpp_emitter as wrapper
 
 
 class ComponentEmitterTest(unittest.TestCase):
-    # 공용 명세의 Switch와 임시 출력 폴더를 준비.
+    # Prepare the shared Switch specification and a temporary output directory.
     def setUp(self):
         self.root = json.loads(cli.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
         self.raw = next(w for w in self.root["widgets"] if w["reactName"] == "Switch")
@@ -27,12 +27,12 @@ class ComponentEmitterTest(unittest.TestCase):
         self.path = Path(self.folder.name)
         self.manifest = self.path / "widgets.json"
 
-    # 수정한 명세를 임시 파일로 저장하고 생성용 정보를 반환.
+    # Save the modified manifest and return its component generation data.
     def load(self):
         self.manifest.write_text(json.dumps(self.root), encoding="utf-8")
         return emitter.load_component(self.manifest, self.raw["reactName"])
 
-    # 생성자에서 LVGL 객체, 그룹, 플래그, 사용자 데이터가 설정되는지 검사.
+    # Check constructor initialization of the LVGL object, group, flags, and user data.
     def test_constructor_preserves_initialization(self):
         source, header = emitter.render_component(self.load())
         for fragment in ("lv_switch_create(parent != nullptr ? parent : GetWindowInstance())",
@@ -46,7 +46,7 @@ class ComponentEmitterTest(unittest.TestCase):
         self.assertIn("parent = nullptr", header)
         self.assertIn("initCompStyle(int32_t type) override", header)
 
-    # 속성의 상태 상수와 C++ 이름을 바꾸면 선언과 본문도 바뀌는지 검사.
+    # Check that changed state constants and C++ names update declarations and definitions.
     def test_state_and_method_names_come_from_manifest(self):
         checked = next(p for p in self.raw["props"] if p["name"] == "checked")
         checked["cppMethod"] = "setPressed"
@@ -58,7 +58,7 @@ class ComponentEmitterTest(unittest.TestCase):
         self.assertIn("lv_obj_clear_state(this->instance, LV_STATE_PRESSED)", source)
         self.assertNotIn("LV_STATE_CHECKED", source)
 
-    # 다른 클래스 이름도 기존 처리법을 재사용하며 원본 헤더 없이 세 파일 생성.
+    # Reuse existing rules under another class name and generate all three files without an original header.
     def test_new_name_reuses_rules_without_handwritten_header(self):
         self.raw.update(reactName="Gauge", nativeClass="Gauge", nativeDir="gauge",
                         lvglCreate="lv_gauge_create", compType="COMP_TYPE_GAUGE")
@@ -79,7 +79,7 @@ class ComponentEmitterTest(unittest.TestCase):
         self.assertIn("->setValue(value)", (self.path / "gauge_wrap.cpp").read_text())
         self.assertEqual(component["nativeClass"], "Gauge")
 
-    # 명세의 초기 설정을 끄면 해당 코드만 제외되는지 검사.
+    # Check that disabling initial settings removes only the corresponding code.
     def test_constructor_options_are_not_fixed_to_switch(self):
         config = self.raw["cppBinding"]["component"]
         config.update(constructor={"group": False, "flags": [], "userData": False},
@@ -90,13 +90,13 @@ class ComponentEmitterTest(unittest.TestCase):
         self.assertNotIn("lv_obj_set_user_data", source)
         self.assertNotIn("initCompStyle", header + source)
 
-    # 미지원 위젯은 파일을 생성하지 않고 명확한 오류를 반환하는지 검사.
+    # Check that unsupported widgets fail clearly without creating files.
     def test_other_widgets_are_explicitly_unsupported(self):
         for name in ("Window", "Canvas"):
             with self.subTest(widget=name), self.assertRaises(wrapper.WidgetEmitterError):
                 emitter.load_component(cli.DEFAULT_MANIFEST, name)
 
-    # 기존 규칙으로 표현할 수 없는 속성을 조용히 빠뜨리지 않는지 검사.
+    # Check that props unsupported by existing rules are rejected instead of omitted.
     def test_unknown_behavior_and_non_boolean_types_fail(self):
         checked = next(p for p in self.raw["props"] if p["name"] == "checked")
         for field, value in (("kind", "value"), ("kind", "manual"), ("type", "number")):
@@ -111,7 +111,7 @@ class ComponentEmitterTest(unittest.TestCase):
                 checked.clear()
                 checked.update(original)
 
-    # 빠진 초기 설정, 오타, 잘못된 bool 값과 플래그 중복을 거부하는지 검사.
+    # Check rejection of missing settings, typos, invalid bool values, and duplicate flags.
     def test_invalid_component_settings_fail(self):
         config = self.raw["cppBinding"]["component"]
         variants = [dict(config, unknown=True), dict(config, emptyStyleHook=1),
@@ -126,7 +126,7 @@ class ComponentEmitterTest(unittest.TestCase):
                 with self.assertRaises(wrapper.WidgetEmitterError):
                     self.load()
 
-    # LVGL 함수와 상수에 잘못된 문자열이 들어오면 생성 전에 거부하는지 검사.
+    # Check rejection of invalid LVGL function and constant names before generation.
     def test_invalid_lvgl_names_fail(self):
         for field, value in (("lvglCreate", "lv_switch_create();"), ("compType", "other")):
             with self.subTest(field=field):
@@ -139,7 +139,7 @@ class ComponentEmitterTest(unittest.TestCase):
         with self.assertRaises(wrapper.WidgetEmitterError):
             self.load()
 
-    # 같은 C++ 이름을 가진 속성과 처리법이 없는 추가 메서드를 거부하는지 검사.
+    # Check rejection of duplicate C++ method names and extra methods without rules.
     def test_duplicate_methods_and_missing_call_rules_fail(self):
         self.raw["props"][-1]["cppMethod"] = "setValue"
         with self.assertRaises(wrapper.WidgetEmitterError):
@@ -150,7 +150,7 @@ class ComponentEmitterTest(unittest.TestCase):
         with self.assertRaises(wrapper.WidgetEmitterError):
             self.load()
 
-    # 세 파일을 함께 생성해도 수작업 파일이 바뀌지 않는지 검사.
+    # Check that generating all three files leaves handwritten files unchanged.
     def test_cli_all_writes_flat_files_and_preserves_originals(self):
         component = self.load()
         manual = wrapper.REPO_DIR / "src/render/native/components/switch"
@@ -169,7 +169,7 @@ class ComponentEmitterTest(unittest.TestCase):
             self.assertEqual(timestamps, [p.stat().st_mtime_ns for p in paths])
         self.assertEqual(before, {f: f.read_bytes() for f in before})
 
-    # 오래된 헤더가 있어도 검사 모드에서 다른 파일을 고치지 않는지 검사.
+    # Check that stale headers do not cause check mode to modify any files.
     def test_check_and_describe_do_not_write(self):
         component = self.load()
         with patch.object(emitter, "AUTOGEN_DIR", self.path), \
@@ -188,7 +188,7 @@ class ComponentEmitterTest(unittest.TestCase):
             self.assertEqual(header.read_text(), "stale")
             self.assertEqual(cpp.read_bytes(), original)
 
-    # 존재하지 않거나 잘못된 양식이 오류로 보고되는지 검사.
+    # Check error reporting for missing or invalid templates.
     def test_bad_template_reports_error(self):
         component = self.load()
         with self.assertRaises(wrapper.WidgetEmitterError):
@@ -198,7 +198,7 @@ class ComponentEmitterTest(unittest.TestCase):
         with self.assertRaises(wrapper.WidgetEmitterError):
             emitter.render_component(component, self.path)
 
-    # 생성된 헤더를 대조할 때 구현에 없는 메서드가 wrapper에 추가되지 않는지 검사.
+    # Check that wrappers cannot add methods absent from generated headers.
     def test_wrapper_is_validated_against_generated_header(self):
         component = self.load()
         _, header = emitter.render_component(component)
@@ -209,7 +209,7 @@ class ComponentEmitterTest(unittest.TestCase):
 
 
 class GenericCallEmitterTest(unittest.TestCase):
-    # 매번 원본 명세와 임시 파일을 준비해 테스트 간 변경을 분리.
+    # Prepare a fresh manifest and temporary files to isolate each test.
     def setUp(self):
         self.root = json.loads(cli.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
         self.widgets = {w["reactName"]: w for w in self.root["widgets"]}
@@ -218,12 +218,12 @@ class GenericCallEmitterTest(unittest.TestCase):
         self.path = Path(self.folder.name)
         self.manifest = self.path / "widgets.json"
 
-    # 현재 테스트의 명세를 저장한 뒤 생성용 위젯 정보를 반환.
+    # Save the current test manifest and return its component generation data.
     def load(self, name):
         self.manifest.write_text(json.dumps(self.root), encoding="utf-8")
         return emitter.load_component(self.manifest, name)
 
-    # 8개 클래스 모두 같은 진입점과 평평한 출력 폴더를 사용하는지 검사.
+    # Check that all eight classes share one entry point and a flat output directory.
     def test_all_eight_classes_generate_before_checking_files(self):
         for name in ("Switch", "View", "Button", "Text", "Checkbox", "Slider", "ProgressBar", "Keyboard"):
             with self.subTest(widget=name):
@@ -240,7 +240,7 @@ class GenericCallEmitterTest(unittest.TestCase):
                         self.assertEqual(output.parent.name, "components")
                 wrapper.load_widget(self.manifest, name, header_source=header)
 
-    # Text와 Checkbox의 서로 다른 C++ 문자열 인자 형식을 보존하는지 검사.
+    # Check that Text and Checkbox retain their distinct C++ string parameter types.
     def test_shared_string_rule_preserves_reference_and_value_signatures(self):
         text, text_header = emitter.render_component(self.load("Text"))
         checkbox, checkbox_header = emitter.render_component(self.load("Checkbox"))
@@ -249,7 +249,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         self.assertIn("void setText(std::string text);", checkbox_header)
         self.assertIn("lv_checkbox_set_text(this->instance, text.c_str());", checkbox)
 
-    # 기본 스타일을 지정한 위젯만 생성자에서 해당 스타일을 초기화하는지 검사.
+    # Check that constructors initialize styles only when specified.
     def test_style_initialization_is_selected_by_manifest(self):
         for name in ("Button", "Text", "Checkbox", "Slider"):
             source, _ = emitter.render_component(self.load(name))
@@ -261,7 +261,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         source, _ = emitter.render_component(self.load("Button"))
         self.assertIn("this->initStyle(LV_STATE_FOCUSED);", source)
 
-    # 두 정수 인자와 애니메이션 고정값이 Slider 호출에 반영되는지 검사.
+    # Check Slider calls with two integer arguments and a fixed animation value.
     def test_integer_pair_and_fixed_argument_are_shared_rules(self):
         source, header = emitter.render_component(self.load("Slider"))
         self.assertIn("void setRange(int32_t min, int32_t max);", header)
@@ -271,7 +271,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         source, _ = emitter.render_component(self.load("Slider"))
         self.assertIn("lv_slider_set_value(this->instance, value, LV_ANIM_ON);", source)
 
-    # bool과 정수의 enum 변환, 다른 위젯의 instance 전달을 검사.
+    # Check bool and integer enum casts and instance arguments from other widgets.
     def test_enum_and_component_instance_conversions(self):
         source, _ = emitter.render_component(self.load("ProgressBar"))
         self.assertIn("static_cast<lv_anim_enable_t>(use_animation)", source)
@@ -281,7 +281,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         self.assertIn("static_cast<lv_keyboard_mode_t>(mode)", source)
         self.assertIn("this->type = COMP_TYPE_TEXTAREA;", source)
 
-    # TS 수동 처리 기록을 유지하면서 C++ 메서드를 모두 생성하는지 검사.
+    # Check that all C++ methods are generated while preserving TS manual handling records.
     def test_ts_manual_records_do_not_disable_native_generation(self):
         for name, method in (("Text", "setText"), ("Keyboard", "setTextarea")):
             original = copy.deepcopy(self.widgets[name])
@@ -290,7 +290,7 @@ class GenericCallEmitterTest(unittest.TestCase):
             self.assertIn(f"::{method}(", source)
             self.assertEqual(self.widgets[name], original)
 
-    # 문자열 호출 규칙을 다른 이름과 함수로 바꿔도 생성기 수정 없이 반영되는지 검사.
+    # Check that renamed string methods and LVGL functions need no generator changes.
     def test_new_class_reuses_call_rule_without_original_header(self):
         raw = self.widgets["Text"]
         raw.update(reactName="Caption", nativeClass="Caption", nativeDir="caption")
@@ -306,7 +306,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         self.assertIn("void Caption::setCaption(std::string& str)", source)
         self.assertIn("lv_label_set_text(this->instance, str.c_str());", source)
 
-    # 호출 규칙이 빠지거나 wrapper에 없는 규칙을 추가하면 생성이 중단되는지 검사.
+    # Check rejection of missing call rules and rules without wrapper methods.
     def test_missing_and_extra_calls_fail(self):
         config = self.widgets["Text"]["cppBinding"]["component"]
         original = copy.deepcopy(config["calls"])
@@ -317,7 +317,7 @@ class GenericCallEmitterTest(unittest.TestCase):
         with self.assertRaises(wrapper.WidgetEmitterError):
             self.load("Text")
 
-    # wrapper와 다른 인자 개수 또는 타입이 지정되면 거부되는지 검사.
+    # Check rejection of argument counts or types that conflict with the wrapper.
     def test_parameter_count_and_type_must_match_wrapper(self):
         call = self.widgets["Slider"]["cppBinding"]["component"]["calls"][0]
         original = copy.deepcopy(call["parameters"])
@@ -326,7 +326,7 @@ class GenericCallEmitterTest(unittest.TestCase):
             with self.assertRaises(wrapper.WidgetEmitterError):
                 self.load("Slider")
 
-    # 없는 인자 참조, 잘못된 변환과 고정 상수가 거부되는지 검사.
+    # Check rejection of missing argument references, invalid conversions, and invalid constants.
     def test_invalid_argument_expressions_fail(self):
         call = self.widgets["Slider"]["cppBinding"]["component"]["calls"][1]
         variants = [[{"from": "missing"}], [{"from": "value", "as": "cString"}],
@@ -338,7 +338,7 @@ class GenericCallEmitterTest(unittest.TestCase):
                 with self.assertRaises(wrapper.WidgetEmitterError):
                     self.load("Slider")
 
-    # 중복된 호출 규칙과 상태 변경 규칙의 덮어쓰기를 거부하는지 검사.
+    # Check rejection of duplicate call rules and overrides of state toggle rules.
     def test_duplicate_calls_and_state_override_fail(self):
         config = self.widgets["Checkbox"]["cppBinding"]["component"]
         config["calls"].append(copy.deepcopy(config["calls"][0]))

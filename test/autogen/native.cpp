@@ -1,4 +1,4 @@
-// 실제 위젯의 값, 객체 연결, 입력 경계와 자원 정리를 검사.
+// Check native widget values, object links, input boundaries, and resource cleanup.
 #include "engine.hpp"
 #ifdef LV_BINDING_GENERATED_COMPONENT_Switch
 #include "components/switch.hpp"
@@ -117,7 +117,7 @@ static unsigned freed[2] = {};
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
 #define LIFETIME_ASAN 1
-// ASan이 실제 free 호출을 관찰해 지정한 이미지 버퍼의 해제 횟수를 기록.
+// Let ASan observe real free calls and count releases of selected image buffers.
 extern "C" void __sanitizer_free_hook(const volatile void* pointer) {
     for (unsigned i = 0; i < 2; ++i) {
         if (watched[i] != nullptr && pointer == watched[i]) ++freed[i];
@@ -128,37 +128,37 @@ extern "C" void __sanitizer_free_hook(const volatile void* pointer) {
 
 
 
-// JS 이벤트를 등록하지 않는 검사이므로 런타임 접근 불필요.
+// No runtime access is needed because these tests register no JS events.
 TJSRuntime* GetRuntime() { return nullptr; }
 
-// 부모 아래의 LVGL 객체 수를 계산.
+// Count LVGL objects below a parent.
 static size_t objectCount(lv_obj_t* parent) {
     size_t count = 1;
     for (uint32_t i = 0; i < lv_obj_get_child_count(parent); ++i) count += objectCount(lv_obj_get_child(parent, i));
     return count;
 }
 
-// 실제 렌더 타이머의 화면 전송 완료를 알림.
+// Signal completion of the actual rendering timer's display flush.
 static void flush(lv_display_t* display, const lv_area_t*, uint8_t*) {
     lv_display_flush_ready(display);
 }
 
 
-// 이미지 파일을 읽어 갱신 검사에 사용.
+// Read an image file for update tests.
 static std::vector<uint8_t> readBytes(const std::string& path) {
     std::ifstream input(path, std::ios::binary);
     assert(input.good());
     return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
 
-// 관찰할 이미지 자원의 주소와 해제 횟수를 초기화.
+// Reset the observed image resource pointers and release counts.
 static void watch(const void* first, const void* second) {
     watched[0] = first;
     watched[1] = second;
     freed[0] = freed[1] = 0;
 }
 
-// ASan에서 두 자원이 각각 한 번 해제됐는지 검사.
+// Check that ASan observes exactly one release for each resource.
 static void checkFreed() {
 #if LIFETIME_ASAN
     assert(freed[0] == 1 && freed[1] == 1);
@@ -166,7 +166,7 @@ static void checkFreed() {
     watched[0] = watched[1] = nullptr;
 }
 
-// 기반 포인터 삭제 시 파생 소멸자 실행을 검사.
+// Check derived destructor execution when deleting through a base pointer.
 static void checkVirtualDestructor() {
     struct Probe : BasicComponent {
         bool& destroyed;
@@ -181,7 +181,7 @@ static void checkVirtualDestructor() {
     assert(destroyed);
 }
 
-// 네 방향 축을 가진 차트를 생성.
+// Create a chart with all four axes.
 static Chart* makeChart(const std::string& uid, lv_obj_t* parent, bool zoom) {
     auto* chart = new Chart(uid, parent);
     lv_obj_set_size(chart->instance, 300, 200);
@@ -205,7 +205,7 @@ static Chart* makeChart(const std::string& uid, lv_obj_t* parent, bool zoom) {
     return chart;
 }
 
-// Switch의 초기 설정과 독립적인 상태 전환을 검사.
+// Check Switch initialization and independent state changes.
 static void checkSwitch(Switch* component, lv_obj_t* parent) {
     lv_obj_t* object = component->instance;
     assert(component->type == COMP_TYPE_SWITCH);
@@ -229,7 +229,7 @@ static void checkSwitch(Switch* component, lv_obj_t* parent) {
     component->initCompStyle(LV_PART_MAIN);
 }
 
-// 위젯의 공통 초기 설정과 스타일을 검사.
+// Check common widget initialization and styles.
 static void checkInitial(BasicComponent* component, lv_obj_t* parent,
                          ECOMP_TYPE type, const lv_obj_class_t* lv_class, bool style) {
     lv_obj_t* object = component->instance;
@@ -243,7 +243,7 @@ static void checkInitial(BasicComponent* component, lv_obj_t* parent,
     assert((component->style_map.count(LV_PART_MAIN) != 0) == style);
 }
 
-// Switch의 기본 부모, 상태와 부모 우선 삭제 검사.
+// Check Switch default parent, states, and parent-first deletion.
 static void testSwitch(int iterations, const std::string& root) {
     (void)root;
     unsigned baseline = objectCount(lv_screen_active());
@@ -263,7 +263,7 @@ static void testSwitch(int iterations, const std::string& root) {
     }
 }
 
-// 단순 위젯의 값, 애니메이션과 객체 연결 검사.
+// Check simple widget values, animation, and object links.
 static void testSimple(int iterations, const std::string& root) {
     (void)root;
     unsigned baseline = objectCount(lv_screen_active());
@@ -285,7 +285,7 @@ static void testSimple(int iterations, const std::string& root) {
         checkInitial(bar, expected_parent, COMP_TYPE_PROGRESSBAR, &lv_bar_class, false);
         checkInitial(keyboard, expected_parent, COMP_TYPE_TEXTAREA, &lv_keyboard_class, false);
 
-        // 문자열을 교체하거나 원본을 바꿔도 LVGL에 저장된 값이 유지되는지 검사.
+        // Check retained LVGL strings after replacing values or changing their source buffers.
         for (std::string value : {std::string(""), std::string(u8"한글 Text"), std::string(1024, 'x')}) {
             std::string original = value;
             text->setText(value);
@@ -301,7 +301,7 @@ static void testSimple(int iterations, const std::string& root) {
             assert(lv_obj_has_state(checkbox->instance, LV_STATE_DISABLED) == ((state & 2) != 0));
         }
 
-        // 값의 상하한 처리와 Slider의 애니메이션 비활성 호출을 검사.
+        // Check value limits and Slider calls with animation disabled.
         slider->setRange(-50, 100);
         bar->setRange(-50, 100);
         assert(lv_slider_get_min_value(slider->instance) == -50);
@@ -327,7 +327,7 @@ static void testSimple(int iterations, const std::string& root) {
         assert(lv_bar_get_value(bar->instance) == 20);
         assert(lv_anim_count_running() == animations);
 
-        // Keyboard의 모드와 Textarea 연결, 부모와 자식 연결을 검사.
+        // Check Keyboard modes, Textarea attachment, and parent-child links.
         auto* textarea = new Textarea("simple-target", parent);
         textarea->setAutoRaiseKeyboard(false);
         keyboard->setTextarea(textarea);
@@ -342,7 +342,7 @@ static void testSimple(int iterations, const std::string& root) {
         view->appendChild(child);
         assert(lv_obj_get_parent(child->instance) == view->instance);
 
-        // 부모가 먼저 삭제된 경우에도 C++ 객체 정리가 안전한지 검사.
+        // Check safe C++ cleanup after the parent has been deleted.
         if (parent) lv_obj_delete(parent);
         delete static_cast<BasicComponent*>(keyboard);
         delete static_cast<BasicComponent*>(textarea);
@@ -355,7 +355,7 @@ static void testSimple(int iterations, const std::string& root) {
     }
 }
 
-// 배열, 날짜, 탭, 축과 키보드 검사.
+// Check arrays, dates, tabs, axes, and the keyboard.
 static void testComplex(int iterations, const std::string& root) {
     (void)root;
     unsigned baseline = objectCount(lv_screen_active());
@@ -475,7 +475,7 @@ static void testComplex(int iterations, const std::string& root) {
     }
 }
 
-// 이미지 자원과 Chart의 반복 정리 검사.
+// Check repeated cleanup of image resources and Chart objects.
 static void testLifetime(int iterations, const std::string& root) {
     (void)root;
     auto png = readBytes(root + "/test/assets/icons/01n.png");
@@ -516,7 +516,7 @@ static void testLifetime(int iterations, const std::string& root) {
 
 #if defined(LV_BINDING_GENERATED_COMPONENT_Image) && defined(LV_BINDING_GENERATED_COMPONENT_GIF) && defined(LV_BINDING_GENERATED_COMPONENT_Arc) && defined(LV_BINDING_GENERATED_COMPONENT_Chart) && defined(LV_BINDING_GENERATED_COMPONENT_Textarea)
 
-// 이미지 실패, 빈 축 레이블과 키보드 삭제 검사.
+// Check failed images, empty axis labels, and keyboard deletion.
 static void testGuards(int iterations, const std::string& root) {
     (void)root;
     auto png = readBytes(root + "/test/assets/icons/01n.png");
@@ -584,7 +584,7 @@ static void testGuards(int iterations, const std::string& root) {
 
 #endif
 
-// 선택한 검사마다 독립 프로세스에서 같은 LVGL 초기화 사용.
+// Use the same LVGL initialization in an independent process for each selected case.
 int main(int argc, char** argv) {
     assert(argc == 4);
     const std::string root = argv[1], suite = argv[3];

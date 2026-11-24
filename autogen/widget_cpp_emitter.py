@@ -1,4 +1,4 @@
-# manifest의 변환 규칙으로 C++ wrapper를 생성.
+# Generate C++ wrappers from manifest conversion rules.
 from __future__ import annotations
 
 import json
@@ -27,36 +27,36 @@ COMMON_METHODS = {
 }
 
 
-# manifest를 읽거나 생성 규칙을 적용할 수 없을 때 발생하는 오류를 정의.
+# Define errors for unreadable manifests and unsupported generation rules.
 class WidgetEmitterError(ValueError):
     pass
 
 
-# 필수 조건이 맞지 않으면 설명 메시지와 함께 생성 작업을 중단.
+# Stop generation with an explanatory message when a required condition fails.
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise WidgetEmitterError(message)
 
 
-# 템플릿의 설명 주석을 제외하고 파일 맨 위에 생성 안내만 추가.
+# Remove template comments and add only the generated file banner.
 def generated_source(source: str) -> str:
     lines = [line for line in source.splitlines() if not line.lstrip().startswith("//")]
-    return "// 자동 생성 파일. 직접 수정 금지.\n" + "\n".join(lines).lstrip("\n") + "\n"
+    return "// Generated file. Do not edit.\n" + "\n".join(lines).lstrip("\n") + "\n"
 
 
-# C++과 JS 코드에 넣을 이름을 검사하고 유효한 이름을 반환.
+# Validate names used in C++ and JS code and return valid identifiers.
 def identifier(value: object, label: str) -> str:
     require(isinstance(value, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", value)
             is not None, f"{label}: 유효한 C++/JS 이름이 아닙니다: {value!r}")
     return value
 
 
-# 위젯 이름으로 생성 파일의 저장 경로를 계산.
+# Build the output path from the widget name.
 def output_path(widget_name: str) -> Path:
     return AUTOGEN_DIR / "generated" / f"{identifier(widget_name, '위젯 이름').lower()}_wrap.cpp"
 
 
-# manifest에서 요청한 위젯과 공유 대상을 찾아 원본 정보를 반환.
+# Find the requested widget and return its shared owner's manifest data.
 def read_widget(manifest_path: Path, widget_name: str) -> tuple[dict, dict]:
     identifier(widget_name, "위젯 이름")
     try:
@@ -66,7 +66,7 @@ def read_widget(manifest_path: Path, widget_name: str) -> tuple[dict, dict]:
     require(isinstance(root, dict) and isinstance(root.get("widgets"), list),
             "manifest.widgets 배열이 필요합니다.")
 
-    # Input처럼 C++ 클래스를 공유하는 위젯은 공유 대상의 정보를 사용.
+    # Use the shared owner for widgets such as Input that share a C++ class.
     visited = set()
     while True:
         require(widget_name not in visited, "cppBinding.sharedWith가 순환합니다.")
@@ -87,14 +87,14 @@ def read_widget(manifest_path: Path, widget_name: str) -> tuple[dict, dict]:
     return root, widget
 
 
-# wrapper 정보를 정리하고 실제 또는 생성된 헤더와 메서드를 대조.
+# Normalize wrapper metadata and check methods against original or generated headers.
 def load_widget(manifest_path: Path, widget_name: str, header_source: str | None = None) -> dict:
     root, widget = read_widget(manifest_path, widget_name)
     normalized = normalize_widget(widget)
     if header_source is not None:
         normalized["generatedHeader"] = header_source
-    # 다른 종류의 JS 객체를 COMP_REF로 잘못 해석하지 않도록 검사.
-    # manifest에 등록된 실제 C++ 컴포넌트 클래스만 참조 인자로 허용.
+    # Reject unrelated JS objects before interpreting their data as COMP_REF.
+    # Accept reference arguments only for native classes registered in the manifest.
     normalized["referenceClasses"] = sorted({
         identifier(w.get("cppBinding", {}).get("nativeClass", w.get("nativeClass")), "참조 클래스")
         for w in root["widgets"] if isinstance(w, dict)
@@ -106,7 +106,7 @@ def load_widget(manifest_path: Path, widget_name: str, header_source: str | None
     return normalized
 
 
-# 공유 manifest의 속성과 C++ 보완 정보를 생성용 메서드 목록으로 정리.
+# Combine shared props and C++ extensions into the generated method list.
 def normalize_widget(widget: dict) -> dict:
     binding = widget.get("cppBinding")
     require(isinstance(binding, dict), "cppBinding 정보가 필요합니다.")
@@ -143,8 +143,8 @@ def normalize_widget(widget: dict) -> dict:
         behavior = prop.get("behavior", {})
         require(isinstance(behavior, dict), "prop.behavior는 객체여야 합니다.")
         kind = behavior.get("kind")
-        # 스타일과 이벤트는 공통 매크로에서, 생성 시점 속성은 생성자에서 처리.
-        # TS에서 수동 처리하는 속성의 추가 호출은 아래 additions에서 반영.
+        # Handle styles and events through shared macros, and constructor props in the constructor.
+        # Include extra calls for TS manual props through the additions below.
         direct = (prop.get("bridgeMethod") is not None
                   and prop.get("lifecycle", "update") == "update"
                   and kind not in {"styleState", "event"})
@@ -162,8 +162,8 @@ def normalize_widget(widget: dict) -> dict:
                 marshal = "int32"
             elif kind == "value" and prop.get("tsType") == "string":
                 marshal = "string"
-        # number에는 정수와 실수 구분이 없고 배열도 구조가 다양하므로 변환법 명시 필요.
-        # 변환법이 불분명한 경우 manifest에 명시하도록 요구.
+        # Require explicit conversion rules for numbers and arrays with different native representations.
+        # Require a manifest rule when the conversion cannot be determined.
         require(marshal is not None, f"{prop['name']}: marshal을 명시해야 합니다.")
         method = {"name": prop["bridgeMethod"],
                   "cppMethod": override.get("cppMethod", prop.get("cppMethod", prop["bridgeMethod"])),
@@ -185,8 +185,8 @@ def normalize_widget(widget: dict) -> dict:
     return result
 
 
-# 위젯 설정, 지원하는 변환 규칙, C++ 메서드 이름을 검사.
-# 인자 개수와 타입은 최종 C++ 빌드에서 검사.
+# Validate widget settings, supported conversions, and C++ method names.
+# Check argument counts and types in the final C++ build.
 def validate_widget(widget: dict, widget_name: str) -> None:
     require(isinstance(widget, dict), "위젯 정보는 객체여야 합니다.")
     identifier(widget_name, "위젯 이름")
@@ -203,8 +203,8 @@ def validate_widget(widget: dict, widget_name: str) -> None:
     require(isinstance(methods, list), "cppBinding.methods 배열이 필요합니다.")
     constructor_parts(binding.get("constructor"))
 
-    # 실제 C++ 헤더에 메서드 이름이 있는지 확인.
-    # 헤더의 인자 타입까지 분석하지 않으므로 호출 규격은 최종 C++ 빌드에서 검사.
+    # Check that method names exist in the actual C++ header.
+    # Leave parameter type checking to the final C++ build; this check inspects names only.
     source_name = identifier(widget.get("nativeDir", native_class.lower()), "C++ 디렉터리")
     header_path = REPO_DIR / f"src/render/native/components/{source_name}/{source_name}.hpp"
     header = widget.get("generatedHeader")
@@ -225,7 +225,7 @@ def validate_widget(widget: dict, widget_name: str) -> None:
         handler_name = "NativeComp" + js_name[0].upper() + js_name[1:]
         kind = method.get("marshal")
         returns = method.get("returns", "undefined")
-        # manifest의 타입 이름을 C++ 코드에 넣기 전에 허용된 값인지 검사.
+        # Validate manifest type names before inserting them into C++ code.
         require("cast" not in method or (kind == "int32" and method["cast"] == "lv_dir_t"),
                 "지원하지 않는 C++ 인자 캐스트입니다.")
         if "referenceClass" in method:
@@ -244,7 +244,7 @@ def validate_widget(widget: dict, widget_name: str) -> None:
                 f"{header_path.name}에 없는 C++ 메서드: {cpp_name}")
 
 
-# 생성자 옵션을 변수 선언, 옵션 읽기, 호출 인자 목록의 세 코드 조각으로 변환.
+# Build constructor declarations, option readers, and call arguments as separate fragments.
 def constructor_parts(constructor: dict | None) -> tuple[str, str, str]:
     if constructor is None:
         return "", "", "uid, nullptr"
@@ -283,7 +283,7 @@ def constructor_parts(constructor: dict | None) -> tuple[str, str, str]:
     return "\n".join(declarations), "\n".join(parsing), ", ".join(values)
 
 
-# 선택한 변환 규칙에 필요한 C++ 보조 코드만 모아 반환.
+# Collect only the C++ helpers required by the selected conversion rules.
 def complex_helpers(kinds: set[str], reference_classes: list[str] | None = None,
                     constructor: bool = False) -> str:
     result = ""
@@ -334,7 +334,7 @@ def complex_helpers(kinds: set[str], reference_classes: list[str] | None = None,
     return result
 
 
-# 메서드 하나의 JS 인자 검사, 값 변환, C++ 호출 코드를 생성.
+# Generate argument checks, value conversion, and a C++ call for one method.
 def method_handler(native_class: str, method: dict) -> str:
     js_name = method["name"]
     cpp_name = method["cppMethod"]
@@ -363,7 +363,7 @@ def method_handler(native_class: str, method: dict) -> str:
         guard = "(void)ctx; (void)argc; (void)argv;"
         body = f"static_cast<{native_class}*>(ref->comp)->{cpp_name}();"
     elif kind in {"int32", "booleanToInt32"}:
-        # TS의 숫자와 enum 값을 수작업 wrapper와 같은 JS_ToInt32 규칙으로 변환.
+        # Convert TS numbers and enums using JS_ToInt32, matching handwritten wrappers.
         check = "JS_IsBool" if kind == "booleanToInt32" else "JS_IsNumber"
         guard = f"if (argc < 1 || !{check}(argv[0])) return JS_UNDEFINED;"
         argument = f"static_cast<{method['cast']}>(value)" if "cast" in method else "value"
@@ -371,8 +371,8 @@ def method_handler(native_class: str, method: dict) -> str:
     if (JS_ToInt32(ctx, &value, argv[0]) < 0) return JS_EXCEPTION;
     static_cast<{native_class}*>(ref->comp)->{cpp_name}({argument});"""
     elif kind in {"stringArrayLength", "stringArrayLengthBoolean"}:
-        # JS에서 배열과 길이를 받되 C++에는 문자열 vector만 전달.
-        # 문자열이 아닌 원소는 기존 wrapper와 동일하게 제외.
+        # Accept a JS array and length but pass only the string vector to C++.
+        # Skip non-string elements, matching the handwritten wrapper.
         with_boolean = kind == "stringArrayLengthBoolean"
         guard = ("if (argc < 3 || !JS_IsArray(argv[0]) || !JS_IsNumber(argv[1]) || !JS_IsBool(argv[2])) return JS_UNDEFINED;"
                  if with_boolean else
@@ -387,7 +387,7 @@ def method_handler(native_class: str, method: dict) -> str:
     int status = JS_ToUint32(ctx, &actual_length, length_value);
     JS_FreeValue(ctx, length_value);
     if (status < 0) return JS_EXCEPTION;
-    // 요청 길이를 실제 배열 길이로 제한해 범위 밖 원소의 반복 조회를 방지.
+    // Clamp the requested length to the array size to avoid repeated out-of-range reads.
     uint32_t count = static_cast<uint32_t>(length);
     if (count > actual_length) count = actual_length;
     std::vector<std::string> items;
@@ -408,8 +408,8 @@ def method_handler(native_class: str, method: dict) -> str:
     }}
     static_cast<{native_class}*>(ref->comp)->{cpp_name}(items{boolean_argument});"""
     elif kind == "int32ArrayPair":
-        # JS 배열 하나를 C++ 호출에 사용할 숫자 두 개로 분리.
-        # 두 값을 모두 읽은 뒤 해제해 예외가 발생해도 참조가 남지 않도록 처리.
+        # Split one JS array into two numeric arguments for the C++ call.
+        # Read both values before releasing them so exceptions leave no retained references.
         guard = "if (argc < 1 || !JS_IsArray(argv[0])) return JS_UNDEFINED;"
         body = f"""JSValue first_value = JS_GetPropertyUint32(ctx, argv[0], 0);
     if (JS_IsException(first_value)) return JS_EXCEPTION;
@@ -426,7 +426,7 @@ def method_handler(native_class: str, method: dict) -> str:
     if (status < 0) return JS_EXCEPTION;
     static_cast<{native_class}*>(ref->comp)->{cpp_name}(first, second);"""
     elif kind in {"int32Args2", "int32Args3", "int32Boolean"}:
-        # ProgressBar의 range는 숫자 두 개, value는 숫자와 bool 입력.
+        # ProgressBar range takes two numbers; value takes a number and a bool.
         second_check = "JS_IsBool" if kind == "int32Boolean" else "JS_IsNumber"
         third_guard = " || !JS_IsNumber(argv[2])" if kind == "int32Args3" else ""
         count = 3 if kind == "int32Args3" else 2
@@ -516,8 +516,8 @@ def method_handler(native_class: str, method: dict) -> str:
     if (!GeneratedAxisData(ctx, argv[0], data)) return JS_EXCEPTION;
     static_cast<{native_class}*>(ref->comp)->{cpp_name}(data);"""
     elif kind == "arcImage":
-        # 스타일 처리에서 전달한 이미지 데이터 또는 심볼 입력.
-        # 반환값 true는 호출 처리 여부를 표시. 이미지 디코딩 성공 보장 없음.
+        # Accept image bytes or symbols supplied by style handling.
+        # A true return value means the call was handled, not that image decoding succeeded.
         guard = "if (argc < 3 || (!JS_IsObject(argv[0]) && !JS_IsNull(argv[0])) || !JS_IsNumber(argv[1])) return JS_NewBool(ctx, 0);"
         body = f"""int32_t style_type = 0;
     if (JS_ToInt32(ctx, &style_type, argv[1]) < 0) return JS_EXCEPTION;
@@ -536,7 +536,7 @@ def method_handler(native_class: str, method: dict) -> str:
         JS_FreeCString(ctx, chars);
     }}
     static_cast<{native_class}*>(ref->comp)->{cpp_name}(data, length, style_type, symbol);"""
-    elif kind == "pointArray":  # [[x, y], ...] 형태의 배열과 길이를 C++ vector로 변환.
+    elif kind == "pointArray":  # Convert an array of [[x, y], ...] points and its length to a C++ vector.
         guard = "if (argc < 2 || !JS_IsArray(argv[0]) || !JS_IsNumber(argv[1])) return JS_UNDEFINED;"
         body = f"""int32_t length = 0;
     if (JS_ToInt32(ctx, &length, argv[1]) < 0 || length < 0) return JS_UNDEFINED;
@@ -575,7 +575,7 @@ def method_handler(native_class: str, method: dict) -> str:
 }}"""
 
 
-# 생성자, 공통 기능, 메서드 코드를 템플릿에 넣어 wrapper 전체 내용을 반환.
+# Fill the template with constructor, shared feature, and method code to produce the wrapper.
 def render_widget(widget: dict, template_path: Path = TEMPLATE) -> str:
     widget_name = widget.get("reactName")
     validate_widget(widget, widget_name)
@@ -595,7 +595,7 @@ def render_widget(widget: dict, template_path: Path = TEMPLATE) -> str:
             '    TJS_CFUNC_DEF("appendChild", 0, NativeCompAppendChild),',
             '    TJS_CFUNC_DEF("insertChildBefore", 0, NativeCompInsertChildBefore),',
         ]
-    # 정렬과 앞뒤 이동 메서드는 manifest에서 선택한 위젯에만 추가.
+    # Add alignment and stacking methods only for widgets selected in the manifest.
     alignment_macros = "\n".join((
         f'WRAPPED_JS_Align({native_class}, "{native_class}")',
         f'WRAPPED_JS_Align_To({native_class}, "{native_class}")',
@@ -632,7 +632,7 @@ def render_widget(widget: dict, template_path: Path = TEMPLATE) -> str:
     source_name = widget.get("nativeDir", native_class.lower())
     component_include = f'#include "native/components/{source_name}/{source_name}.hpp"'
     if widget.get("componentHeader"):
-        # 빌드에서 선택한 위젯만 평평한 생성 폴더의 헤더를 사용.
+        # Use headers from the flat generated directory only for selected widgets.
         component_include = (f"#ifdef LV_BINDING_GENERATED_COMPONENT_{native_class}\n"
                              f'#include "components/{source_name}.hpp"\n#else\n'
                              f"{component_include}\n#endif")

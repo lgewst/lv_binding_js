@@ -1,4 +1,4 @@
-// 명세로 생성한 클래스 선언.
+// Class declaration generated from the manifest.
 #pragma once
 
 #include "native/components/component.hpp"

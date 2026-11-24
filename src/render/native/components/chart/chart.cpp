@@ -20,12 +20,12 @@ Chart::Chart(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 };
 
 Chart::~Chart() {
-    // 축 정리 중 배치 콜백이 삭제된 축에 접근하지 않도록 먼저 연결 해제.
+    // Detach the layout callback before deleting chart axes.
     if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
         lv_obj_remove_event_cb(this->instance, &Chart::realign_scales_cb);
     }
 
-    // 부모가 축과 확대용 객체를 먼저 삭제한 경우 중복 삭제를 생략.
+    // Skip axes and zoom objects already deleted by their parent.
     for (lv_obj_t** object : {&this->scale_left, &this->scale_right,
                              &this->scale_top, &this->scale_bottom,
                              &this->zoom_wrapper}) {

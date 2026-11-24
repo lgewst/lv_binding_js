@@ -1,10 +1,10 @@
-// cpp_emitter.py가 manifest로 생성한 파일.
+// File generated from the manifest by cpp_emitter.py.
 ${component_include}
 #include <new>
 
 static JSClassID ${native_class}ClassID;
 
-// 위젯이 공유하는 스타일, 이벤트, 객체 수명 관리 코드를 추가.
+// Add shared style, event, and object lifetime handling.
 WRAPPED_JS_SETSTYLE(${native_class}, "${native_class}")
 WRAPPED_JS_AddEventListener(${native_class}, "${native_class}")
 WRAPPED_JS_RemoveEventListener(${native_class}, "${native_class}")
@@ -13,9 +13,9 @@ STYLE_INFO(${native_class}, "${native_class}")
 ${feature_macros}${movement_macros}
 WRAPPED_JS_CLOSE_COMPONENT(${native_class}, "${native_class}")
 
-// 속성과 cppBinding.methods에서 정리한 변환 규칙으로 JS 값 변환 함수를 생성.
+// Generate JS argument converters from props and cppBinding.methods.
 ${method_handlers}
-// JS에 공개할 메서드 목록이며 기존 수작업 wrapper와 같은 이름을 사용.
+// Expose the same JS method names as the handwritten wrapper.
 static const JSCFunctionListEntry ComponentProtoFuncs[] = {
     TJS_CFUNC_DEF("nativeSetStyle", 0, NativeCompSetStyle),
     TJS_CFUNC_DEF("addEventListener", 0, NativeCompAddEventListener),
@@ -27,7 +27,7 @@ ${background_entry}${movement_entries}
     TJS_CFUNC_DEF("close", 0, NativeCompCloseComponent),
 };
 
-// JS의 new ${native_class}({uid}) 호출과 C++ 위젯 객체 생성을 연결.
+// Connect JS new ${native_class}({uid}) calls to C++ widget construction.
 static JSValue ${native_class}Constructor(
     JSContext* ctx, JSValueConst new_target, int argc, JSValueConst* argv) {
     JSValue proto = JS_UNDEFINED;

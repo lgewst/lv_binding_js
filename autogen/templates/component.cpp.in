@@ -1,4 +1,4 @@
-// 명세로 생성한 위젯 구현.
+// Widget implementation generated from the manifest.
 #include "${nativeDir}.hpp"
 #include <cstdlib>
 

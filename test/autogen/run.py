@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 실제 빌드의 JS 호출, LVGL 값과 gallery 화면 비교를 실행.
+# Run JS calls, native LVGL checks, and gallery screenshot comparisons on actual builds.
 
 import argparse
 import json
@@ -19,7 +19,7 @@ UPDATES = ("Roller", "Dropdownlist", "Textarea", "Input", "Calendar", "Keyboard"
 GUARD_CLASSES = ("Image", "GIF", "Arc", "Chart", "Textarea")
 
 
-# 실행 결과를 로그에 저장하고 기대한 종료 코드인지 검사.
+# Log command output and check the expected exit code.
 def execute(command, label, args, env=None, expected=0, timeout=90):
     result = subprocess.run(command, cwd=REPO, env=env, capture_output=True, text=True, timeout=timeout)
     log = args.output_dir / f"{label}.log"
@@ -30,7 +30,7 @@ def execute(command, label, args, env=None, expected=0, timeout=90):
     return result
 
 
-# 실제 앱의 컴파일 옵션과 생성 클래스 선택 정보를 읽음.
+# Read compile options and generated class selections from the actual application build.
 def build_settings(build):
     commands = json.loads((build / "compile_commands.json").read_text(encoding="utf-8"))
     engine = next(item for item in commands if item["file"].endswith("/src/engine/engine.cpp"))
@@ -42,7 +42,7 @@ def build_settings(build):
     return engine, generated, wrappers
 
 
-# C++ 검사 프로그램은 한 번 컴파일하고 사례마다 독립 프로세스에서 실행.
+# Compile the native test executable once and run each case in its own process.
 def native_tests(args):
     engine, generated, _ = build_settings(args.build_dir)
     with tempfile.TemporaryDirectory(prefix="autogen-native-") as folder:
@@ -71,7 +71,7 @@ def native_tests(args):
                 raise RuntimeError(f"Native test did not finish: {suite}")
 
 
-# 생성 전용 입력 검사는 생성 wrapper 빌드에서만 실행.
+# Run generated-only input checks only on generated wrapper builds.
 def api_tests(args):
     _, _, wrappers = build_settings(args.build_dir)
     contracts = {"tabs", "keyboard", "chart"} <= wrappers
@@ -84,7 +84,7 @@ def api_tests(args):
         raise RuntimeError("API tests did not finish")
 
 
-# 위젯 20종과 변경 상태, 기존 조합 화면 5개를 한 gallery에서 캡처.
+# Capture 20 widgets, updated states, and five existing combinations through one gallery.
 def capture_gallery(build, folder, args):
     folder.mkdir(parents=True, exist_ok=True)
     for path in folder.glob("*.png"):
@@ -105,7 +105,7 @@ def capture_gallery(build, folder, args):
             raise RuntimeError(f"Screenshot missing: {output}")
 
 
-# 기존 PNG 도구로 모든 RGBA 값을 직접 대조해 차이 픽셀 수를 저장.
+# Compare every RGBA value with the existing PNG tools and save differing pixel counts.
 def compare_gallery(before, after, args):
     program = """
 const fs = require('fs'), path = require('path'), {PNG} = require('pngjs');
@@ -132,7 +132,7 @@ process.exitCode = rows.some(row => row.differentPixels !== 0) ? 1 : 0;
     print(f"PASS gallery: {len(rows)} pairs, different pixels 0", flush=True)
 
 
-# 빌드 경로와 검사 종류를 선택해 같은 진입점에서 실행.
+# Select build paths and test suites through one entry point.
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path, default=REPO / "build-generated-switch")

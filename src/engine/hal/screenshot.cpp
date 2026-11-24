@@ -12,8 +12,8 @@ bool hal_capture_display_png(const char * path)
 {
     if(!path || path[0] == '\0') return false;
 
-    // Mask는 일반 화면이 아니라 LVGL의 top layer에 그려진다. 기본 캡처는
-    // 그대로 두고, Mask 비교 테스트에서만 레이어를 선택할 수 있게 한다.
+    // Select the top layer for Mask screenshot tests.
+    // Use the active screen for all other captures.
     const char * capture_layer = getenv("LVGLJS_CAPTURE_LAYER");
     lv_obj_t * scr = capture_layer && strcmp(capture_layer, "top") == 0
         ? lv_layer_top() : lv_screen_active();

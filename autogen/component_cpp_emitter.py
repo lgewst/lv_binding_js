@@ -1,4 +1,4 @@
-# 명세의 공통 처리법으로 위젯 .cpp, .hpp를 생성.
+# Generate widget .cpp and .hpp files using shared manifest rules.
 
 from __future__ import annotations
 
@@ -46,21 +46,21 @@ ENUM_TYPES = {
 }
 
 
-# 생성 결과를 위젯별 하위 폴더 없이 components 폴더에 저장.
+# Save generated files in one components directory without widget subdirectories.
 def output_paths(component: dict) -> tuple[Path, Path]:
     name = identifier(component["nativeDir"], "C++ 파일 이름")
     folder = AUTOGEN_DIR / "generated/components"
     return folder / f"{name}.cpp", folder / f"{name}.hpp"
 
 
-# 코드에 사용할 LVGL 이름의 형식을 검사하고 원래 값을 반환.
+# Validate an LVGL identifier and return its original value.
 def lvgl_name(value: object, pattern: str, label: str) -> str:
     require(isinstance(value, str) and re.fullmatch(pattern, value) is not None,
             f"{label}: 지원하지 않는 LVGL 이름입니다: {value!r}")
     return value
 
 
-# 생성자의 그룹, 플래그와 기본 스타일 설정을 검사.
+# Validate constructor groups, flags, and initial styles.
 def validate_constructor(constructor: object) -> None:
     require(isinstance(constructor, dict)
             and {"group", "flags", "userData"} <= set(constructor)
@@ -103,7 +103,7 @@ def validate_constructor(constructor: object) -> None:
             argument_expression(argument, {p["name"]: p["type"] for p in parameters})
 
 
-# 인자 전달법을 검사하고 C++ 표현식으로 변환.
+# Validate argument mappings and convert them to C++ expressions.
 def argument_expression(argument: object, parameters: dict[str, str], members: dict | None = None) -> str:
     require(isinstance(argument, dict), "각 호출 인자는 객체여야 합니다.")
     if set(argument) == {"constant"}:
@@ -133,7 +133,7 @@ def argument_expression(argument: object, parameters: dict[str, str], members: d
     return f"static_cast<{conversion}>({name})"
 
 
-# 공통 호출 규칙의 인자와 wrapper가 전달하는 C++ 타입을 대조.
+# Check call arguments against the C++ types passed by the wrapper.
 def validate_call(call: object, method: dict, members: dict | None = None, features: list | None = None) -> dict:
     require(isinstance(call, dict) and {"method", "parameters"} <= set(call), "메서드와 매개변수가 필요합니다.")
     parameters = call["parameters"]
@@ -183,7 +183,7 @@ def validate_call(call: object, method: dict, members: dict | None = None, featu
             **{key: call[key] for key in ("store", "guard", "ifDefined", "targetMember") if key in call}}
 
 
-# 공용 명세의 속성과 C++ 호출 목록에서 생성할 함수 전체를 정리.
+# Collect generated methods from shared props and C++ call rules.
 def component_methods(raw: dict, component: dict, native_class: str) -> list[dict]:
     props = raw.get("props")
     require(isinstance(props, list), "props 배열이 필요합니다.")
@@ -239,7 +239,7 @@ def component_methods(raw: dict, component: dict, native_class: str) -> list[dic
     return methods
 
 
-# 보관 멤버, 기능 조합, 해제 대상과 열거형 이름을 검사.
+# Validate stored members, feature combinations, cleanup rules, and enums.
 def validate_component(component: dict) -> None:
     require({"constructor", "emptyStyleHook"} <= set(component)
             and set(component) <= {"constructor", "emptyStyleHook", "calls", "members", "freeMembers",
@@ -287,7 +287,7 @@ def validate_component(component: dict) -> None:
         identifier(component["windowsAlias"], "Windows 클래스 별칭")
 
 
-# 위젯별 주문표를 읽고 공통 처리법으로 생성 가능한지 검사.
+# Load a widget specification and check support for its selected rules.
 def load_component(manifest: Path, widget_name: str) -> dict:
     _, raw = read_widget(manifest, widget_name)
     binding = raw.get("cppBinding")
@@ -316,12 +316,12 @@ def load_component(manifest: Path, widget_name: str) -> dict:
             "emptyStyleHook": component["emptyStyleHook"], "methods": methods, "component": component}
 
 
-# 함수 선언과 정의에 공통으로 사용할 매개변수 목록을 생성.
+# Build a parameter list shared by declarations and definitions.
 def parameter_list(method: dict) -> str:
     return ", ".join(f'{PARAMETER_TYPES[p["type"]]} {p["name"]}' for p in method["parameters"])
 
 
-# 상태의 켜기와 끄기를 처리하는 bool 함수 본문을 생성.
+# Generate a bool method that adds or clears a state.
 def state_method(native_class: str, method: dict) -> str:
     return f'''void {native_class}::{method["name"]}(bool value) {{
     if (value) {{
@@ -332,7 +332,7 @@ def state_method(native_class: str, method: dict) -> str:
 }}'''
 
 
-# 인자 전달법을 적용해 LVGL 함수를 호출하는 함수 본문을 생성.
+# Generate an LVGL call using the configured argument mappings.
 def call_method(native_class: str, method: dict) -> str:
     target = "this->" + method["targetMember"] if "targetMember" in method else "this->instance"
     arguments = ", ".join([target, *method["arguments"]])
@@ -349,7 +349,7 @@ def call_method(native_class: str, method: dict) -> str:
             + indent(body, "    ") + '\n}')
 
 
-# 초기 설정, 메서드와 선택한 기능을 공통 양식에 넣어 두 파일을 반환.
+# Fill the shared templates with initialization, methods, and features, then return both files.
 def render_component(component: dict, template_dir: Path = TEMPLATE_DIR) -> tuple[str, str]:
     native_class = component["nativeClass"]
     constructor = component["constructor"]

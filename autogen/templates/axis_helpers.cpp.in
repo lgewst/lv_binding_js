@@ -1,4 +1,4 @@
-// 같은 중첩 데이터 구조를 사용하는 축 데이터와 scatter 호출에서 재사용.
+// Reuse helpers for axis data and scatter calls with the same nested data structure.
 
 static bool GeneratedAxisData(JSContext* ctx, JSValueConst array, std::vector<axis_data>& out) {
     uint32_t length = 0;

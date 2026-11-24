@@ -1,4 +1,4 @@
-// 포커스가 들어오면 키보드를 연결하고 화면 크기를 조정.
+// Attach the keyboard on focus and adjust the screen height.
 void ${native_class}::raiseKeyboard (lv_event_t* event) {
     ${native_class}* comp = static_cast<${native_class}*>(lv_event_get_user_data(event));
     if (!comp->auto_raise_keyboard) return;
@@ -21,7 +21,7 @@ void ${native_class}::raiseKeyboard (lv_event_t* event) {
     lv_obj_add_event_cb(comp->keyboard, &${native_class}::hideKeyboard, LV_EVENT_READY, comp);
 }
 
-// 키보드를 닫고 원래 화면 크기를 복구.
+// Hide the keyboard and restore the original screen height.
 void ${native_class}::hideKeyboard (lv_event_t * event) {
     ${native_class}* comp = static_cast<${native_class}*>(lv_event_get_user_data(event));
     if (comp->keyboard == nullptr || !comp->auto_raise_keyboard) return;
@@ -38,7 +38,7 @@ void ${native_class}::hideKeyboard (lv_event_t * event) {
     comp->keyboard = nullptr;
 }
 
-// 입력창의 기본 테두리와 포커스 스타일을 설정.
+// Set the default input border and focus styles.
 void ${native_class}::initCompStyle (int32_t type) {
     this->ensureStyle(type);
     lv_style_t* style = this->style_map.at(type);
@@ -60,7 +60,7 @@ void ${native_class}::initCompStyle (int32_t type) {
     }
 }
 
-// LVGL 객체가 해제되기 전에 키보드의 참조를 먼저 정리.
+// Clear keyboard references before the LVGL object is released.
 void ${native_class}::releaseKeyboardOnDelete(lv_event_t* event) {
     auto* component = static_cast<${native_class}*>(lv_event_get_user_data(event));
     lv_obj_remove_event_cb(component->instance, &${native_class}::raiseKeyboard);
@@ -68,7 +68,7 @@ void ${native_class}::releaseKeyboardOnDelete(lv_event_t* event) {
     component->releaseKeyboard();
 }
 
-// 키보드 연결과 객체를 정리하고 화면 높이를 복구.
+// Detach and delete the keyboard, then restore the screen height.
 void ${native_class}::releaseKeyboard() {
     if (this->keyboard != nullptr && lv_obj_is_valid(this->keyboard)) {
         lv_obj_remove_event_cb_with_user_data(this->keyboard, &${native_class}::hideKeyboard, this);

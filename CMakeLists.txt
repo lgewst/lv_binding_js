@@ -89,7 +89,7 @@ add_executable(lvgljs
     src/render/native/bootstrap/render_bootstrap.cpp
 )
 
-# 선택한 위젯만 생성 코드로 교체. 기본 빌드는 수작업 구현 유지.
+# Replace only selected widgets with generated code. Use handwritten code by default.
 set(_generated_cpp_widgets ${GENERATED_CPP_WIDGETS})
 set(_generated_cpp_components ${GENERATED_CPP_COMPONENTS})
 list(REMOVE_DUPLICATES _generated_cpp_components)
@@ -113,7 +113,7 @@ if(_generated_cpp_widgets)
 endif()
 set(_generated_component_outputs "")
 foreach(_widget IN LISTS _generated_cpp_components)
-    # 생성된 헤더와 wrapper의 호출 규격을 함께 검사한 뒤 경로 확인.
+    # Check generated headers against wrapper calls before resolving paths.
     execute_process(
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
             --widget "${_widget}" --target all --describe
@@ -157,13 +157,13 @@ foreach(_widget IN LISTS _generated_cpp_components)
     target_compile_definitions(lvgljs PRIVATE "${_component_define}=1")
 endforeach()
 if(_generated_component_outputs)
-    # 모든 컴파일보다 먼저 헤더 생성. 평평한 components 폴더를 포함 경로에 추가.
+    # Generate headers before compilation and include the flat components directory.
     add_custom_target(generate_cpp_components DEPENDS ${_generated_component_outputs})
     add_dependencies(lvgljs generate_cpp_components)
     target_include_directories(lvgljs BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/autogen/generated")
 endif()
 foreach(_widget IN LISTS _generated_cpp_widgets)
-    # React 이름 대신 명세의 실제 경로 사용. Tabs는 tabview, Input은 Textarea와 연결.
+    # Use native paths from the manifest: Tabs uses tabview, and Input shares Textarea.
     set(_wrapper_component_args "")
     if(_widget IN_LIST _generated_cpp_components)
         list(APPEND _wrapper_component_args --component-header)

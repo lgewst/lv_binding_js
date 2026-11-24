@@ -16,7 +16,7 @@ CMakeCache.txt
 
 # Generated JS files
 /test/**/*.js
-# 직접 작성한 자동 생성 검증 스크립트는 Git 추적 대상으로 유지.
+# Keep the handwritten code generation checks tracked by Git.
 !/test/autogen/api.js
 
 /demo/**/*.js

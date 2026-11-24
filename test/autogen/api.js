@@ -1,27 +1,27 @@
-// JS 호출, 잘못된 입력과 반복 생성 및 정리 경로를 검사.
+// Check JS calls, invalid inputs, repeated construction, and cleanup paths.
 const render = globalThis[Symbol.for('lvgljs')].NativeRender;
 const native = render.NativeComponents;
 const iterations = Number(tjs.env.AUTOGEN_ITERATIONS || '40');
 
-// 조건이 맞지 않으면 사례 이름과 함께 검사 중단.
+// Stop with the case name when a condition fails.
 function check(ok, label) {
   if (!ok) throw new Error('AssertionError: ' + label);
 }
 
-// 예외가 필요한 호출에서 실제 예외 발생 여부를 검사.
+// Check that calls expected to throw actually raise an exception.
 function mustThrow(fn, label) {
   let thrown = false;
   try { fn(); } catch (_) { thrown = true; }
   check(thrown, label);
 }
 
-// JS 참조가 사라진 객체를 정리해 등록 객체 수를 검사.
+// Collect unreachable JS objects and check the registered component count.
 function collect() {
   tjs.engine.gc.run();
   tjs.engine.gc.run();
 }
 
-// 파일에서 읽은 실제 범위를 ArrayBuffer로 변환.
+// Convert the actual bytes read from a file to an ArrayBuffer.
 function bufferOf(bytes) {
   return bytes instanceof ArrayBuffer ? bytes
     : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
@@ -31,7 +31,7 @@ const gif = bufferOf(await tjs.readFile('test/gif/1/sample.gif'));
 check(Number.isInteger(iterations) && iterations > 0, 'positive iterations');
 
 
-// 숫자 변환, 범위, 혼합 인자와 Arc 이미지 호출 검사.
+// Check numeric conversion, ranges, mixed arguments, and Arc image calls.
 async function checkNumeric() {
   const slider = new native.Slider({ uid: 'numeric-api-slider' });
   check(slider.setRange([-50, 100]) === undefined, 'Slider range');
@@ -55,7 +55,7 @@ async function checkNumeric() {
     check(arc[method](value) === undefined, 'Arc ' + method);
   }
   check(arc.setArcImage(null, 0, '\uf00c') === true, 'Arc symbol');
-  // 기존 수작업 wrapper와 동일하게 인자가 세 개인 호출을 요구.
+  // Require three arguments, matching the handwritten wrapper.
   check(arc.setArcImage(null, 0) === false, 'Arc missing third argument');
   check(arc.setArcImage(null, 0, '') === true, 'Arc clear symbol');
   const buffer = png;
@@ -65,7 +65,7 @@ async function checkNumeric() {
   arc.close();
 }
 
-// 목록, 선택 인덱스와 Textarea 및 Input 속성 검사.
+// Check options, selection indices, and Textarea and Input props.
 async function checkSelection() {
   const roller = new native.Roller({ uid: 'api-roller' });
   check(roller.setOptions(['Apple', 9, 'Banana'], 3, false) === undefined, 'Roller filtered options');
@@ -77,7 +77,7 @@ async function checkSelection() {
   dropdown.setItems(['Apple', 'Banana', 'Cherry'], 3);
   check(typeof dropdown.setSelectIndex === 'function', 'correct selection method');
   check(dropdown.setSelectIndex(2) === undefined, 'Dropdownlist select');
-  dropdown.setDir(8); // 아래쪽 방향을 나타내는 LV_DIR_BOTTOM 값.
+  dropdown.setDir(8); // LV_DIR_BOTTOM selects the downward direction.
   dropdown.setArrowDir(2);
   dropdown.setHighLightSelect(true);
   dropdown.setText('Selected fruit');
@@ -93,7 +93,7 @@ async function checkSelection() {
   check(textarea.setAutoKeyboard(true) === undefined, 'boolean to int32');
   textarea.setAutoKeyboard(false);
 
-  // Input은 Textarea 클래스를 단일 줄 모드로 사용.
+  // Input uses the Textarea class in single-line mode.
   const input = new native.Textarea({ uid: 'api-input' });
   input.setAutoKeyboard(false);
   input.setOneLine(true);
@@ -104,7 +104,7 @@ async function checkSelection() {
   for (const comp of [input, textarea, dropdown, roller]) comp.close();
 }
 
-// 날짜, 탭과 Chart 축 및 scatter 호출 검사.
+// Check dates, tabs, Chart axes, and scatter calls.
 async function checkComplex() {
   const calendar = new native.Calendar({ uid: 'complex-calendar' });
   calendar.setToday(2026, 11, 16);
@@ -115,7 +115,7 @@ async function checkComplex() {
   textarea.setAutoKeyboard(false);
   const keyboard = new native.Keyboard({ uid: 'complex-keyboard' });
   keyboard.setTextarea(textarea);
-  // Keyboard의 모드별 호출은 공통 반복 검사에서 확인.
+  // Check mode-specific Keyboard calls in the shared repetition cases.
 
   const tabs = new native.TabView({ uid: 'complex-tabs', tabPosition: 4, tabSize: 48 });
   const content = new native.View({ uid: 'complex-content' });
@@ -134,15 +134,15 @@ async function checkComplex() {
   chart.setType(3);
   chart.setScatterData([{ color: 16711680, data: [10, 20, 30, 40, 50, 60] }]);
   check(chart.refresh() === undefined, 'refresh');
-  keyboard.close(); // 연결된 Textarea보다 먼저 Keyboard를 해제.
-  // 부모가 자식 LVGL 객체를 관리하므로 이 실행 검사에서는 중복 종료 생략.
+  keyboard.close(); // Release the Keyboard before its attached Textarea.
+  // Skip duplicate closure here because the parent owns the child LVGL objects.
   calendar.close();
   chart.close();
 }
 
-// 생성 wrapper의 타입 거부와 생성자 기본값 검사.
+// Check generated wrapper type rejection and constructor defaults.
 async function checkContracts() {
-  const tabs = new native.TabView({ uid: 'default-size-tabs' }); // tabSize의 기본값은 0.
+  const tabs = new native.TabView({ uid: 'default-size-tabs' }); // tabSize defaults to zero.
   mustThrow(() => new native.TabView({ uid: 'bad-tabs', tabSize: 'bad' }), 'constructor type');
   mustThrow(() => new native.TabView({ uid: 'throwing-tabs', get tabPosition() { throw Error('getter'); } }), 'constructor getter');
   const keyboard = new native.Keyboard({ uid: 'guard-keyboard' });
@@ -165,7 +165,7 @@ async function checkContracts() {
   check(native.Window === undefined && native.Canvas === undefined, 'unsupported native components');
 }
 
-// Switch와 단순 위젯의 고유 호출을 한 묶음으로 준비.
+// Prepare a batch of calls specific to Switch and simple widgets.
 function createWidgetBatch(index) {
   const component = new native.Switch({ uid: 'switch-api-' + index });
   for (const value of [true, false, true, false]) {
@@ -207,7 +207,7 @@ function createWidgetBatch(index) {
 }
 
 
-// 이미지 자원과 네 방향 축이 있는 위젯을 준비.
+// Prepare image resources and a widget with all four axes.
 function createResourceBatch(index) {
   const image = new native.Image({ uid: 'lifetime-image-' + index });
   image.setImageBinary(png);
@@ -226,7 +226,7 @@ function createResourceBatch(index) {
   return [image, animation, chart];
 }
 
-// 중복 close, GC와 부모 우선 삭제를 같은 절차로 반복 검사.
+// Repeat explicit close, garbage collection, and parent-first deletion through one procedure.
 function exerciseLifecycle(createBatch, expectedCount, label, mode) {
   const baseline = render.RenderUtil.getCompMapSize();
   for (let index = 0; index < iterations; ++index) {

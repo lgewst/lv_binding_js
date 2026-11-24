@@ -1,4 +1,4 @@
-// 확대용 부모를 생성하고 기존 축 배치를 갱신.
+// Create the zoom parent and update existing axis positions.
 void ${native_class}::ensureZoomWrapper () {
     if (this->zoom_wrapper != nullptr) return;
 
@@ -26,7 +26,7 @@ void ${native_class}::ensureZoomWrapper () {
     this->layoutScales();
 }
 
-// 확대 배율을 적용하고 차트와 축을 갱신.
+// Apply zoom factors and update the chart and axes.
 void ${native_class}::applyZoom () {
     lv_obj_set_width(this->instance, (int32_t)(((int64_t)this->base_w * this->zoom_x) >> 8));
     lv_obj_set_height(this->instance, (int32_t)(((int64_t)this->base_h * this->zoom_y) >> 8));
@@ -34,7 +34,7 @@ void ${native_class}::applyZoom () {
     lv_chart_refresh(this->instance);
 }
 
-// 배치 이벤트가 발생하면 축 위치를 갱신.
+// Update axis positions after layout events.
 void ${native_class}::realign_scales_cb (lv_event_t* e) {
     ${native_class}* comp = (${native_class}*)lv_event_get_user_data(e);
     if (comp != nullptr) {
@@ -42,7 +42,7 @@ void ${native_class}::realign_scales_cb (lv_event_t* e) {
     }
 }
 
-// 축이 확대된 내용과 함께 스크롤되는지 확인.
+// Check whether an axis scrolls with the zoomed content.
 bool ${native_class}::scaleScrollsWithChart (lv_scale_mode_t mode) {
     if (this->zoom_wrapper == nullptr) return false;
 
@@ -50,7 +50,7 @@ bool ${native_class}::scaleScrollsWithChart (lv_scale_mode_t mode) {
     return horizontal ? this->zoom_x != LV_SCALE_NONE : this->zoom_y != LV_SCALE_NONE;
 }
 
-// 네 방향 축에 필요한 여백과 배치를 갱신.
+// Update spacing and layout for all four axes.
 void ${native_class}::layoutScales () {
     int32_t pad_l = 0, pad_r = 0, pad_t = 0, pad_b = 0;
 
@@ -71,7 +71,7 @@ void ${native_class}::layoutScales () {
     this->layoutScale(this->scale_bottom, LV_SCALE_MODE_HORIZONTAL_BOTTOM, pad_l, pad_t);
 }
 
-// 축의 방향과 확대 상태에 따라 위치를 계산.
+// Calculate positions from axis direction and zoom state.
 void ${native_class}::layoutScale (lv_obj_t* scale, lv_scale_mode_t mode, int32_t pad_l, int32_t pad_t) {
     if (scale == nullptr) return;
 
@@ -118,7 +118,7 @@ void ${native_class}::layoutScale (lv_obj_t* scale, lv_scale_mode_t mode, int32_
     }
 }
 
-// 필요한 축 객체를 한 번 생성.
+// Create each required axis object once.
 lv_obj_t* ${native_class}::ensureScale (lv_obj_t** scale, lv_scale_mode_t mode) {
     if (*scale != nullptr) return *scale;
 
@@ -131,7 +131,7 @@ lv_obj_t* ${native_class}::ensureScale (lv_obj_t** scale, lv_scale_mode_t mode) 
     return *scale;
 }
 
-// 축 눈금의 간격, 길이와 공간을 설정.
+// Set axis tick intervals, lengths, and spacing.
 void ${native_class}::configureScale (
     lv_obj_t* scale,
     lv_scale_mode_t mode,
@@ -179,7 +179,7 @@ void ${native_class}::configureScale (
     this->layoutScales();
 }
 
-// 보관한 문자열을 LVGL 축 라벨에 연결.
+// Attach retained label strings to the LVGL axis.
 void ${native_class}::applyScaleLabels (
     lv_obj_t* scale,
     std::vector<std::string>& labels,
@@ -200,7 +200,7 @@ void ${native_class}::applyScaleLabels (
     lv_scale_set_text_src(scale, ptrs.data());
 }
 
-// 기본 테마 또는 지정한 색상을 반환.
+// Return the requested color or the default theme color.
 lv_color_t ${native_class}::seriesColor (int32_t color) {
     if (color == -1) {
         return lv_theme_get_color_primary(this->instance);
@@ -208,7 +208,7 @@ lv_color_t ${native_class}::seriesColor (int32_t color) {
     return lv_color_hex((uint32_t)color);
 }
 
-// 시리즈의 Y 배열에 범위 안의 값만 기록.
+// Write only in-range values to the series Y array.
 void ${native_class}::fillSeriesY (lv_chart_series_t* series, std::vector<int32_t>& values) {
 
     int32_t* y_points = lv_chart_get_series_y_array(this->instance, series);

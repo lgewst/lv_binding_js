@@ -1,4 +1,4 @@
-# 배열, 이미지와 축 같은 복합 처리법을 모아 C++ 본문을 생성.
+# Generate C++ bodies for compound rules such as arrays, images, and axes.
 
 from string import Template
 
@@ -31,7 +31,7 @@ FEATURE_PARTS = {
 }
 
 
-# 필요한 기능 양식만 읽고 클래스 이름을 적용.
+# Load only the required feature templates and substitute the class name.
 def feature_part(features: list[str], part: str, native_class: str) -> str:
     chunks = []
     for feature in features:
@@ -45,7 +45,7 @@ def feature_part(features: list[str], part: str, native_class: str) -> str:
     return "\n".join(chunks)
 
 
-# 복합 처리법의 설정과 보관할 멤버가 맞는지 검사.
+# Validate compound rule settings and stored members.
 def validate_rule(rule: dict, members: dict, features: list[str], lvgl_name) -> None:
     kind = rule.get("kind")
     require(isinstance(kind, str) and kind in RULE_FIELDS, f"지원하지 않는 복합 처리법입니다: {kind}")
@@ -99,7 +99,7 @@ def validate_rule(rule: dict, members: dict, features: list[str], lvgl_name) -> 
             require(isinstance(rule["axis"], str) and rule["axis"] in AXES, "축 방향이 맞지 않습니다.")
 
 
-# 배열과 문자열 목록을 보관하거나 합치는 공통 본문을 생성.
+# Generate shared bodies that retain arrays or join string options.
 def collection_body(method: dict) -> str:
     params = [p["name"] for p in method["parameters"]]
     if method["kind"] == "retainedArray":
@@ -124,7 +124,7 @@ for (size_t i = 0; i < {source}.size(); ++i) {{
     return body
 
 
-# 이미지 교체가 성공한 뒤 이전 데이터와 설명 구조체를 해제.
+# Release the previous image data and descriptor only after replacement succeeds.
 def image_body(method: dict) -> str:
     buf, length = [p["name"] for p in method["parameters"][:2]]
     if method["kind"] == "imageBuffer":
@@ -161,7 +161,7 @@ if ({buf} != nullptr) {{
 lv_obj_invalidate(this->instance);'''
 
 
-# 축 방향별 범위, 라벨과 시리즈 처리에 같은 본문을 재사용.
+# Reuse axis handling bodies with direction-specific ranges, labels, and series.
 def axis_body(method: dict) -> str:
     params = [p["name"] for p in method["parameters"]]
     kind = method["kind"]
@@ -206,7 +206,7 @@ for (size_t i = 0; i < {source}.size(); ++i) {{
 lv_chart_refresh(this->instance);'''
 
 
-# 복합 처리법을 선택해 함수 중괄호 안에 들어갈 코드를 반환.
+# Select a compound rule and return the code for its method body.
 def rule_body(method: dict) -> str:
     kind = method["kind"]
     params = [p["name"] for p in method["parameters"]]

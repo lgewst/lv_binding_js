@@ -1,4 +1,4 @@
-// 복합 인자를 읽다가 예외가 발생해도 임시 JSValue를 해제.
+// Release temporary JSValue objects even when reading compound arguments fails.
 struct GeneratedJSValue {
     JSContext* ctx;
     JSValue value;

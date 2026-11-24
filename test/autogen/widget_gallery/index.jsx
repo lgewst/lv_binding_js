@@ -7,8 +7,8 @@ import {
   Calendar, Keyboard, Tabs, Chart,
 } from 'lvgljs-ui';
 
-// 수작업 wrapper와 생성 wrapper의 비교 화면에서 표시할 위젯을 선택.
-// 아래 위젯별 분기는 화면 구성용이며 C++ 생성기의 처리 규칙과 별개.
+// Select a widget for handwritten and generated wrapper screenshot comparisons.
+// The widget branches below define test screens independently of C++ generation rules.
 const name = tjs.env.AUTOGEN_WIDGET || 'Switch';
 const { width, height } = Dimensions.window;
 const label = { 'text-color': '#334155' };
@@ -17,7 +17,7 @@ const row = {
   'align-items': 'center', 'border-width': 0, padding: 8,
 };
 
-// 선택한 위젯의 초기 상태 또는 변경된 속성을 화면에 표시.
+// Display the selected widget with its initial or updated props.
 function Preview({ phase = 0 }) {
   const [keyboardInput, setKeyboardInput] = React.useState(null);
   switch (name) {
@@ -149,7 +149,7 @@ const panelStyle = { left: 90, top: 110, width: width - 180, height: height - 18
   display: 'flex', 'flex-direction': 'column', 'justify-content': 'center',
   'align-items': 'center', 'background-color': 'white', 'border-color': '#dae2ed' };
 
-// 비교 화면의 공통 배경을 구성하고 환경 변수에 따라 상태 변경.
+// Set the shared screenshot background and update state from environment variables.
 function Gallery() {
   const [phase, setPhase] = React.useState(0);
   React.useEffect(() => {
@@ -158,7 +158,7 @@ function Gallery() {
     const timer = setTimeout(() => setPhase(target), 200);
     return () => clearTimeout(timer);
   }, []);
-  // 기존 화면 조합을 같은 gallery 진입점에서 선택.
+  // Select existing screen combinations through the same gallery entry point.
   if (name === 'ButtonMask') return (
   <View style={{ width, height }}>
     <Mask onClick={() => {}}>

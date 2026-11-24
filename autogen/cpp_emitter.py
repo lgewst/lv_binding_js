@@ -14,7 +14,7 @@ from widget_cpp_emitter import DEFAULT_MANIFEST, WidgetEmitterError, load_widget
 REPO_DIR = Path(__file__).resolve().parent.parent
 
 
-# 실행 옵션에 따라 위젯 코드를 생성하거나, 저장된 결과의 최신 여부를 검사.
+# Generate widget code or check saved outputs according to the command options.
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="명세로 C++ wrapper와 위젯 구현 생성")
     parser.add_argument("--widget", default="Switch", help="manifest의 reactName")
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.describe:
             print(json.dumps(description))
             return 0
-        # 세 파일 모두 생성 가능한지 확인한 뒤 저장 또는 검사 시작.
+        # Validate generation of all three files before writing or checking outputs.
         if args.check:
             for output, source in outputs.items():
                 if not output.is_file() or output.read_text(encoding="utf-8") != source:
