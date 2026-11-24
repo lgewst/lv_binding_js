@@ -1,0 +1,4 @@
+    static void raiseKeyboard(lv_event_t* event);
+    static void hideKeyboard(lv_event_t* event);
+    void initCompStyle(int32_t type) override;
+    static void releaseKeyboardOnDelete(lv_event_t* event);

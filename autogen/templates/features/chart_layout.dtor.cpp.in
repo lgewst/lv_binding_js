@@ -1,0 +1,12 @@
+    if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &${native_class}::realign_scales_cb);
+    }
+
+    for (lv_obj_t** object : {&this->scale_left, &this->scale_right,
+                             &this->scale_top, &this->scale_bottom,
+                             &this->zoom_wrapper}) {
+        if (*object != nullptr && lv_obj_is_valid(*object)) {
+            lv_obj_delete(*object);
+        }
+        *object = nullptr;
+    }

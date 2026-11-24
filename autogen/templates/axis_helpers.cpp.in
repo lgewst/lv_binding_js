@@ -1,0 +1,24 @@
+// 같은 중첩 데이터 구조를 사용하는 축 데이터와 scatter 호출에서 재사용.
+
+static bool GeneratedAxisData(JSContext* ctx, JSValueConst array, std::vector<axis_data>& out) {
+    uint32_t length = 0;
+    if (!GeneratedArrayLength(ctx, array, &length)) return false;
+    for (uint32_t i = 0; i < length; ++i) {
+        GeneratedJSValue item(ctx, JS_GetPropertyUint32(ctx, array, i));
+        if (JS_IsException(item.value)) return false;
+        axis_data row;
+        if (!GeneratedIntProperty(ctx, item.value, "color", &row.color)) return false;
+        GeneratedJSValue values(ctx, JS_GetPropertyStr(ctx, item.value, "data"));
+        if (JS_IsException(values.value)) return false;
+        uint32_t count = 0;
+        if (!GeneratedArrayLength(ctx, values.value, &count)) return false;
+        for (uint32_t j = 0; j < count; ++j) {
+            GeneratedJSValue value(ctx, JS_GetPropertyUint32(ctx, values.value, j));
+            int32_t number = 0;
+            if (JS_IsException(value.value) || JS_ToInt32(ctx, &number, value.value) < 0) return false;
+            row.data.push_back(number);
+        }
+        out.push_back(row);
+    }
+    return true;
+}

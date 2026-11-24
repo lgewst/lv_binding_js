@@ -20,11 +20,20 @@ Chart::Chart(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 };
 
 Chart::~Chart() {
-    if (this->scale_left) lv_obj_delete(this->scale_left);
-    if (this->scale_right) lv_obj_delete(this->scale_right);
-    if (this->scale_top) lv_obj_delete(this->scale_top);
-    if (this->scale_bottom) lv_obj_delete(this->scale_bottom);
-    if (this->zoom_wrapper) lv_obj_delete(this->zoom_wrapper);
+    // 축 정리 중 배치 콜백이 삭제된 축에 접근하지 않도록 먼저 연결 해제.
+    if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &Chart::realign_scales_cb);
+    }
+
+    // 부모가 축과 확대용 객체를 먼저 삭제한 경우 중복 삭제를 생략.
+    for (lv_obj_t** object : {&this->scale_left, &this->scale_right,
+                             &this->scale_top, &this->scale_bottom,
+                             &this->zoom_wrapper}) {
+        if (*object != nullptr && lv_obj_is_valid(*object)) {
+            lv_obj_delete(*object);
+        }
+        *object = nullptr;
+    }
 };
 
 void Chart::ensureZoomWrapper () {

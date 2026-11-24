@@ -3,6 +3,7 @@
 #if LV_USE_SNAPSHOT
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "framebuffer32_to_rgba.h"
 #include "render/native/core/img/png/lodepng.h"
@@ -11,7 +12,11 @@ bool hal_capture_display_png(const char * path)
 {
     if(!path || path[0] == '\0') return false;
 
-    lv_obj_t * scr = lv_screen_active();
+    // Mask는 일반 화면이 아니라 LVGL의 top layer에 그려진다. 기본 캡처는
+    // 그대로 두고, Mask 비교 테스트에서만 레이어를 선택할 수 있게 한다.
+    const char * capture_layer = getenv("LVGLJS_CAPTURE_LAYER");
+    lv_obj_t * scr = capture_layer && strcmp(capture_layer, "top") == 0
+        ? lv_layer_top() : lv_screen_active();
     if(!scr) return false;
 
     lv_draw_buf_t * snapshot = lv_snapshot_take(scr, LV_COLOR_FORMAT_ARGB8888);

@@ -16,7 +16,7 @@
 class Image final : public BasicComponent {
  public:
   Image(std::string uid, lv_obj_t* parent = nullptr);
-  ~Image();
+  ~Image() override;
 
   lv_img_dsc_t_1* image_desc = nullptr;
   uint8_t* image_buf = nullptr;

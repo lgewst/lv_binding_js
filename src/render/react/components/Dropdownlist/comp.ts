@@ -46,7 +46,7 @@ function setListProps(comp, newProps: DropdownListProps, oldProps: Partial<Dropd
     },
     selectIndex(selectIndex) {
       if (selectIndex !== oldProps.selectIndex) {
-        comp.setselectIndex(selectIndex);
+        comp.setSelectIndex(selectIndex);
       }
     },
     text(text) {

@@ -247,10 +247,10 @@ BasicComponent::~BasicComponent () {
         lv_style_reset(style.second);
     }
 
-    // close() deletes this object; JS unRegistEvent clears handlers but cannot reach
-    // the LVGL callback on the finalizer-only path. Detach callback before lv_obj_del.
-    lv_obj_remove_event_cb(this->instance, &BasicComponent::EventCallback);
+    // 부모나 파생 클래스에서 먼저 삭제한 LVGL 객체에 대한 접근을 방지.
+    // 살아 있는 객체에서만 이벤트 콜백을 제거한 뒤 삭제.
     if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &BasicComponent::EventCallback);
         lv_obj_del(this->instance);
     }
     this->instance = nullptr;

@@ -11,7 +11,7 @@
 class GIF final : public BasicComponent {
  public:
   GIF(std::string uid, lv_obj_t* parent = nullptr);
-  ~GIF();
+  ~GIF() override;
 
   lv_img_dsc_t_1* gif_desc = nullptr;
   uint8_t* gif_buf = nullptr;

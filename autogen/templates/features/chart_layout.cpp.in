@@ -1,0 +1,221 @@
+// 확대용 부모를 생성하고 기존 축 배치를 갱신.
+void ${native_class}::ensureZoomWrapper () {
+    if (this->zoom_wrapper != nullptr) return;
+
+    lv_obj_update_layout(this->instance);
+    this->base_w = lv_obj_get_width(this->instance);
+    this->base_h = lv_obj_get_height(this->instance);
+
+    lv_obj_t* chart_parent = lv_obj_get_parent(this->instance);
+    this->zoom_wrapper = lv_obj_create(chart_parent != nullptr ? chart_parent : this->instance);
+    lv_obj_set_size(this->zoom_wrapper, this->base_w, this->base_h);
+
+    lv_obj_set_align(this->zoom_wrapper, lv_obj_get_style_align(this->instance, LV_PART_MAIN));
+    lv_obj_set_x(this->zoom_wrapper, lv_obj_get_style_x(this->instance, LV_PART_MAIN));
+    lv_obj_set_y(this->zoom_wrapper, lv_obj_get_style_y(this->instance, LV_PART_MAIN));
+
+    lv_obj_set_style_pad_all(this->zoom_wrapper, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(this->zoom_wrapper, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(this->zoom_wrapper, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(this->zoom_wrapper, LV_OPA_TRANSP, LV_PART_MAIN);
+
+    lv_obj_set_parent(this->instance, this->zoom_wrapper);
+    lv_obj_set_align(this->instance, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(this->instance, 0, 0);
+
+    this->layoutScales();
+}
+
+// 확대 배율을 적용하고 차트와 축을 갱신.
+void ${native_class}::applyZoom () {
+    lv_obj_set_width(this->instance, (int32_t)(((int64_t)this->base_w * this->zoom_x) >> 8));
+    lv_obj_set_height(this->instance, (int32_t)(((int64_t)this->base_h * this->zoom_y) >> 8));
+    this->layoutScales();
+    lv_chart_refresh(this->instance);
+}
+
+// 배치 이벤트가 발생하면 축 위치를 갱신.
+void ${native_class}::realign_scales_cb (lv_event_t* e) {
+    ${native_class}* comp = (${native_class}*)lv_event_get_user_data(e);
+    if (comp != nullptr) {
+        comp->layoutScales();
+    }
+}
+
+// 축이 확대된 내용과 함께 스크롤되는지 확인.
+bool ${native_class}::scaleScrollsWithChart (lv_scale_mode_t mode) {
+    if (this->zoom_wrapper == nullptr) return false;
+
+    bool horizontal = (mode == LV_SCALE_MODE_HORIZONTAL_TOP || mode == LV_SCALE_MODE_HORIZONTAL_BOTTOM);
+    return horizontal ? this->zoom_x != LV_SCALE_NONE : this->zoom_y != LV_SCALE_NONE;
+}
+
+// 네 방향 축에 필요한 여백과 배치를 갱신.
+void ${native_class}::layoutScales () {
+    int32_t pad_l = 0, pad_r = 0, pad_t = 0, pad_b = 0;
+
+    if (this->zoom_wrapper != nullptr) {
+
+        if (this->scale_top && this->scaleScrollsWithChart(LV_SCALE_MODE_HORIZONTAL_TOP)) pad_t = this->draw_top;
+        if (this->scale_bottom && this->scaleScrollsWithChart(LV_SCALE_MODE_HORIZONTAL_BOTTOM)) pad_b = this->draw_bottom;
+        if (this->scale_left && this->scaleScrollsWithChart(LV_SCALE_MODE_VERTICAL_LEFT)) pad_l = this->draw_left;
+        if (this->scale_right && this->scaleScrollsWithChart(LV_SCALE_MODE_VERTICAL_RIGHT)) pad_r = this->draw_right;
+
+        lv_obj_set_size(this->zoom_wrapper, this->base_w + pad_l + pad_r, this->base_h + pad_t + pad_b);
+        lv_obj_set_pos(this->instance, pad_l, pad_t);
+    }
+
+    this->layoutScale(this->scale_left, LV_SCALE_MODE_VERTICAL_LEFT, pad_l, pad_t);
+    this->layoutScale(this->scale_right, LV_SCALE_MODE_VERTICAL_RIGHT, pad_l, pad_t);
+    this->layoutScale(this->scale_top, LV_SCALE_MODE_HORIZONTAL_TOP, pad_l, pad_t);
+    this->layoutScale(this->scale_bottom, LV_SCALE_MODE_HORIZONTAL_BOTTOM, pad_l, pad_t);
+}
+
+// 축의 방향과 확대 상태에 따라 위치를 계산.
+void ${native_class}::layoutScale (lv_obj_t* scale, lv_scale_mode_t mode, int32_t pad_l, int32_t pad_t) {
+    if (scale == nullptr) return;
+
+    bool inside = this->scaleScrollsWithChart(mode);
+    lv_obj_t* anchor;
+
+    if (inside) {
+        if (lv_obj_get_parent(scale) != this->zoom_wrapper) {
+            lv_obj_set_parent(scale, this->zoom_wrapper);
+        }
+        anchor = this->instance;
+        pad_l = 0;
+        pad_t = 0;
+    } else {
+        lv_obj_t* outer = lv_obj_get_parent(this->alignInstance());
+        if (outer != nullptr && lv_obj_get_parent(scale) != outer) {
+            lv_obj_set_parent(scale, outer);
+        }
+        anchor = this->alignInstance();
+    }
+
+    int32_t span_w = (inside || this->zoom_wrapper == nullptr) ? lv_obj_get_width(this->instance) : this->base_w;
+    int32_t span_h = (inside || this->zoom_wrapper == nullptr) ? lv_obj_get_height(this->instance) : this->base_h;
+
+    switch (mode) {
+        case LV_SCALE_MODE_VERTICAL_LEFT:
+            lv_obj_set_height(scale, span_h);
+            lv_obj_align_to(scale, anchor, LV_ALIGN_OUT_LEFT_TOP, 0, pad_t);
+            break;
+        case LV_SCALE_MODE_VERTICAL_RIGHT:
+            lv_obj_set_height(scale, span_h);
+            lv_obj_align_to(scale, anchor, LV_ALIGN_OUT_RIGHT_TOP, 0, pad_t);
+            break;
+        case LV_SCALE_MODE_HORIZONTAL_TOP:
+            lv_obj_set_width(scale, span_w);
+            lv_obj_align_to(scale, anchor, LV_ALIGN_OUT_TOP_LEFT, pad_l, 0);
+            break;
+        case LV_SCALE_MODE_HORIZONTAL_BOTTOM:
+            lv_obj_set_width(scale, span_w);
+            lv_obj_align_to(scale, anchor, LV_ALIGN_OUT_BOTTOM_LEFT, pad_l, 0);
+            break;
+        default:
+            break;
+    }
+}
+
+// 필요한 축 객체를 한 번 생성.
+lv_obj_t* ${native_class}::ensureScale (lv_obj_t** scale, lv_scale_mode_t mode) {
+    if (*scale != nullptr) return *scale;
+
+    lv_obj_t* scale_parent = lv_obj_get_parent(this->alignInstance());
+    *scale = lv_scale_create(scale_parent != nullptr ? scale_parent : this->alignInstance());
+    lv_obj_clear_flag(*scale, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(*scale, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_scale_set_mode(*scale, mode);
+    this->layoutScales();
+    return *scale;
+}
+
+// 축 눈금의 간격, 길이와 공간을 설정.
+void ${native_class}::configureScale (
+    lv_obj_t* scale,
+    lv_scale_mode_t mode,
+    int32_t major_len,
+    int32_t minor_len,
+    int32_t major_num,
+    int32_t minor_num,
+    int32_t draw_size
+) {
+    if (scale == nullptr) return;
+
+    uint32_t every = (uint32_t)(minor_num > 0 ? minor_num + 1 : 1);
+    uint32_t total = major_num > 1 ? (uint32_t)((major_num - 1) * every + 1) : 1U;
+
+    lv_scale_set_mode(scale, mode);
+    lv_scale_set_total_tick_count(scale, total);
+    lv_scale_set_major_tick_every(scale, every);
+    lv_scale_set_label_show(scale, true);
+    lv_obj_set_style_length(scale, major_len, LV_PART_INDICATOR);
+    lv_obj_set_style_length(scale, minor_len, LV_PART_ITEMS);
+
+    if (draw_size > 0) {
+        switch (mode) {
+            case LV_SCALE_MODE_VERTICAL_LEFT:
+                this->draw_left = draw_size;
+                lv_obj_set_width(scale, draw_size);
+                break;
+            case LV_SCALE_MODE_VERTICAL_RIGHT:
+                this->draw_right = draw_size;
+                lv_obj_set_width(scale, draw_size);
+                break;
+            case LV_SCALE_MODE_HORIZONTAL_TOP:
+                this->draw_top = draw_size;
+                lv_obj_set_height(scale, draw_size);
+                break;
+            case LV_SCALE_MODE_HORIZONTAL_BOTTOM:
+                this->draw_bottom = draw_size;
+                lv_obj_set_height(scale, draw_size);
+                break;
+            default:
+                break;
+        }
+    }
+
+    this->layoutScales();
+}
+
+// 보관한 문자열을 LVGL 축 라벨에 연결.
+void ${native_class}::applyScaleLabels (
+    lv_obj_t* scale,
+    std::vector<std::string>& labels,
+    std::vector<const char*>& ptrs
+) {
+    if (scale == nullptr) return;
+
+    ptrs.clear();
+    if (labels.empty()) {
+        lv_scale_set_text_src(scale, nullptr);
+        return;
+    }
+    ptrs.reserve(labels.size() + 1);
+    for (const auto& label : labels) {
+        ptrs.push_back(label.c_str());
+    }
+    ptrs.push_back(nullptr);
+    lv_scale_set_text_src(scale, ptrs.data());
+}
+
+// 기본 테마 또는 지정한 색상을 반환.
+lv_color_t ${native_class}::seriesColor (int32_t color) {
+    if (color == -1) {
+        return lv_theme_get_color_primary(this->instance);
+    }
+    return lv_color_hex((uint32_t)color);
+}
+
+// 시리즈의 Y 배열에 범위 안의 값만 기록.
+void ${native_class}::fillSeriesY (lv_chart_series_t* series, std::vector<int32_t>& values) {
+
+    int32_t* y_points = lv_chart_get_series_y_array(this->instance, series);
+    if (y_points == nullptr) return;
+
+    uint32_t point_count = lv_chart_get_point_count(this->instance);
+    for (size_t j = 0; j < values.size() && j < point_count; j++) {
+        y_points[j] = values[j];
+    }
+}

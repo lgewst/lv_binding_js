@@ -1,0 +1,87 @@
+// 포커스가 들어오면 키보드를 연결하고 화면 크기를 조정.
+void ${native_class}::raiseKeyboard (lv_event_t* event) {
+    ${native_class}* comp = static_cast<${native_class}*>(lv_event_get_user_data(event));
+    if (!comp->auto_raise_keyboard) return;
+    if (comp->keyboard != nullptr && lv_obj_is_valid(comp->keyboard)) return;
+    lv_obj_t* keyboard = lv_keyboard_create(lv_layer_top());
+    comp->keyboard = keyboard;
+
+    uint32_t height;
+    lv_display_t* disp_default = lv_display_get_default();
+    height = lv_display_get_vertical_resolution(disp_default);
+
+    lv_keyboard_set_textarea(keyboard, comp->instance);
+    lv_obj_set_style_height(keyboard, height * 2 / 3, 0);
+    lv_obj_update_layout(lv_layer_top());
+
+    lv_obj_set_style_height(GetWindowInstance(), height - lv_obj_get_height(keyboard), 0);
+    lv_obj_scroll_to_view_recursive(comp->instance, LV_ANIM_ON);
+
+    lv_obj_add_event_cb(comp->keyboard, &${native_class}::hideKeyboard, LV_EVENT_CANCEL, comp);
+    lv_obj_add_event_cb(comp->keyboard, &${native_class}::hideKeyboard, LV_EVENT_READY, comp);
+}
+
+// 키보드를 닫고 원래 화면 크기를 복구.
+void ${native_class}::hideKeyboard (lv_event_t * event) {
+    ${native_class}* comp = static_cast<${native_class}*>(lv_event_get_user_data(event));
+    if (comp->keyboard == nullptr || !comp->auto_raise_keyboard) return;
+
+    lv_keyboard_set_textarea(comp->keyboard, nullptr);
+    lv_obj_remove_event_cb_with_user_data(comp->keyboard, &${native_class}::hideKeyboard, comp);
+    lv_obj_del_async(comp->keyboard);
+
+    lv_display_t* disp_default = lv_display_get_default();
+    lv_obj_set_style_height(GetWindowInstance(), lv_display_get_vertical_resolution(disp_default), 0);
+    lv_obj_update_layout(lv_screen_active());
+    lv_obj_clear_state(comp->instance, LV_STATE_FOCUSED);
+    lv_indev_reset(NULL, comp->instance);
+    comp->keyboard = nullptr;
+}
+
+// 입력창의 기본 테두리와 포커스 스타일을 설정.
+void ${native_class}::initCompStyle (int32_t type) {
+    this->ensureStyle(type);
+    lv_style_t* style = this->style_map.at(type);
+
+    if (type == LV_PART_MAIN || type == LV_STATE_FOCUSED) {
+        lv_style_set_radius(style, 4);
+        lv_style_set_pad_left(style, 4);
+        lv_style_set_pad_right(style, 4);
+        lv_style_set_pad_bottom(style, 4);
+        lv_style_set_pad_top(style, 4);
+        lv_style_set_border_width(style, 2);
+        lv_style_set_border_opa(style, LV_OPA_40);
+
+        if (type == LV_PART_MAIN) {
+            lv_style_set_border_color(style, lv_color_hex(0x37474F));
+        } else if (type == LV_STATE_FOCUSED) {
+            lv_style_set_border_color(style, lv_color_hex(0x2196f3));
+        }
+    }
+}
+
+// LVGL 객체가 해제되기 전에 키보드의 참조를 먼저 정리.
+void ${native_class}::releaseKeyboardOnDelete(lv_event_t* event) {
+    auto* component = static_cast<${native_class}*>(lv_event_get_user_data(event));
+    lv_obj_remove_event_cb(component->instance, &${native_class}::raiseKeyboard);
+    lv_obj_remove_event_cb(component->instance, &${native_class}::hideKeyboard);
+    component->releaseKeyboard();
+}
+
+// 키보드 연결과 객체를 정리하고 화면 높이를 복구.
+void ${native_class}::releaseKeyboard() {
+    if (this->keyboard != nullptr && lv_obj_is_valid(this->keyboard)) {
+        lv_obj_remove_event_cb_with_user_data(this->keyboard, &${native_class}::hideKeyboard, this);
+        lv_obj_t* target = lv_keyboard_get_textarea(this->keyboard);
+        if (target == nullptr || lv_obj_is_valid(target)) {
+            lv_keyboard_set_textarea(this->keyboard, nullptr);
+        }
+        lv_obj_delete(this->keyboard);
+        lv_obj_t* window = GetWindowInstance();
+        lv_display_t* display = lv_display_get_default();
+        if (display != nullptr && window != nullptr && lv_obj_is_valid(window)) {
+            lv_obj_set_height(window, lv_display_get_vertical_resolution(display));
+        }
+    }
+    this->keyboard = nullptr;
+}

@@ -1,0 +1,2 @@
+    lv_obj_add_event_cb(this->instance, &${native_class}::realign_scales_cb, LV_EVENT_SIZE_CHANGED, this);
+    lv_obj_add_event_cb(this->instance, &${native_class}::realign_scales_cb, LV_EVENT_STYLE_CHANGED, this);

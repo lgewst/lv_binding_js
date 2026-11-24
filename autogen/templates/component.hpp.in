@@ -1,0 +1,12 @@
+// 명세로 생성한 클래스 선언.
+#pragma once
+
+#include "native/components/component.hpp"
+#include "native/core/basic/comp.hpp"
+
+${type_declarations}class ${nativeClass} final : public BasicComponent {
+public:
+${members}${destructor_declaration}    ${nativeClass}(std::string uid${constructor_parameters}, lv_obj_t* parent = nullptr);
+
+${feature_public}${declarations}${feature_private}
+};
