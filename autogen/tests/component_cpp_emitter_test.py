@@ -38,7 +38,7 @@ class ComponentEmitterTest(unittest.TestCase):
         for fragment in ("lv_switch_create(parent != nullptr ? parent : GetWindowInstance())",
                          "this->type = COMP_TYPE_SWITCH", "this->uid = uid",
                          "lv_group_add_obj(lv_group_get_default(), this->instance)",
-                         "lv_obj_clear_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS)",
+                         "lv_obj_remove_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS)",
                          "lv_obj_add_flag(this->instance, LV_OBJ_FLAG_EVENT_BUBBLE)",
                          "lv_obj_add_flag(this->instance, LV_OBJ_FLAG_CLICK_FOCUSABLE)",
                          "lv_obj_set_user_data(this->instance, this)"):
@@ -55,7 +55,7 @@ class ComponentEmitterTest(unittest.TestCase):
         self.assertIn("void Switch::setPressed(bool value)", source)
         self.assertIn("void setPressed(bool value);", header)
         self.assertIn("lv_obj_add_state(this->instance, LV_STATE_PRESSED)", source)
-        self.assertIn("lv_obj_clear_state(this->instance, LV_STATE_PRESSED)", source)
+        self.assertIn("lv_obj_remove_state(this->instance, LV_STATE_PRESSED)", source)
         self.assertNotIn("LV_STATE_CHECKED", source)
 
     # Reuse existing rules under another class name and generate all three files without an original header.

@@ -47,6 +47,10 @@ jobs:
       # gen:all:check - fails fast if generated files or doc/ markdown are out of date.
       - name: gen:all:check
         run: npm run gen:all:check
+      # Deprecated LVGL names resolve only through lv_api_map_v*.h, which the next
+      # major version drops. See doc/build/lvgl-api-names.md
+      - name: check:lvgl-api-names
+        run: npm run check:lvgl-api-names
       # The emitters' own tests, and the comparison of every generated React
       # component against its hand-written one. Neither needs a build.
       - name: autogen unit tests
@@ -65,6 +69,18 @@ jobs:
         run: cmake --build build -j
       - name: Run tests
         run: yarn capture:screenshots
+      # Compile once more with the compatibility headers switched off. This is what
+      # a major LVGL bump will look like, and it catches names the grep above cannot
+      # see (macro expansions, names reached through other headers).
+      - name: Build without LVGL API mapping
+        run: |
+          cmake -B build-strict -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_LVGL_SIMULATOR=OFF \
+            -DUSE_EXTERNAL_FFI=ON \
+            -DCMAKE_C_FLAGS=-DLV_DISABLE_API_MAPPING \
+            -DCMAKE_CXX_FLAGS=-DLV_DISABLE_API_MAPPING
+          cmake --build build-strict -j
       - name: Upload test screenshots
         if: always()
         uses: actions/upload-artifact@v7

@@ -313,7 +313,7 @@ void NativeComponentMaskInit (JSContext* ctx, JSValue ns);
         lv_refr_now(NULL);                                                                                                  \
         COMP_REF* s = (COMP_REF*)JS_GetOpaque(this_val, COMPONENT##ClassID);                                                \
         lv_obj_t* instance = static_cast<lv_obj_t*>(((COMPONENT*)(s->comp))->instance);                                     \
-        lv_coord_t left = lv_obj_get_x(instance);                                                                           \
+        int32_t left = lv_obj_get_x(instance);                                                                           \
         return JS_NewInt32(ctx, static_cast<int32_t>(left));                                                                \
     };                                                                                                                      \
                                                                                                                             \
@@ -321,7 +321,7 @@ void NativeComponentMaskInit (JSContext* ctx, JSValue ns);
         lv_refr_now(NULL);                                                                                                  \
         COMP_REF* s = (COMP_REF*)JS_GetOpaque(this_val, COMPONENT##ClassID);                                                \
         lv_obj_t* instance = static_cast<lv_obj_t*>(((COMPONENT*)(s->comp))->instance);                                     \
-        lv_coord_t top = lv_obj_get_y(instance);                                                                            \
+        int32_t top = lv_obj_get_y(instance);                                                                            \
         return JS_NewInt32(ctx, static_cast<int32_t>(top));                                                                 \
     };                                                                                                                      \
                                                                                                                             \
@@ -329,7 +329,7 @@ void NativeComponentMaskInit (JSContext* ctx, JSValue ns);
         lv_refr_now(NULL);                                                                                                  \
         COMP_REF* s = (COMP_REF*)JS_GetOpaque(this_val, COMPONENT##ClassID);                                                \
         lv_obj_t* instance = static_cast<lv_obj_t*>(((COMPONENT*)(s->comp))->instance);                                     \
-        lv_coord_t width = lv_obj_get_width(instance);                                                                      \
+        int32_t width = lv_obj_get_width(instance);                                                                      \
         return JS_NewInt32(ctx, static_cast<int32_t>(width));                                                               \
     };                                                                                                                      \
                                                                                                                             \
@@ -337,7 +337,7 @@ void NativeComponentMaskInit (JSContext* ctx, JSValue ns);
         lv_refr_now(NULL);                                                                                                  \
         COMP_REF* s = (COMP_REF*)JS_GetOpaque(this_val, COMPONENT##ClassID);                                                \
         lv_obj_t* instance = static_cast<lv_obj_t*>(((COMPONENT*)(s->comp))->instance);                                     \
-        lv_coord_t height = lv_obj_get_height(instance);                                                                    \
+        int32_t height = lv_obj_get_height(instance);                                                                    \
         return JS_NewInt32(ctx, static_cast<int32_t>(height));                                                              \
     };                                                                                                                      \
                                                                                                                             \
@@ -345,10 +345,10 @@ void NativeComponentMaskInit (JSContext* ctx, JSValue ns);
         lv_refr_now(NULL);                                                                                                  \
         COMP_REF* s = (COMP_REF*)JS_GetOpaque(this_val, COMPONENT##ClassID);                                                \
         lv_obj_t* instance = static_cast<lv_obj_t*>(((COMPONENT*)(s->comp))->instance);                                     \
-        lv_coord_t width = lv_obj_get_width(instance);                                                                      \
-        lv_coord_t height = lv_obj_get_height(instance);                                                                    \
-        lv_coord_t left = lv_obj_get_x(instance);                                                                           \
-        lv_coord_t top = lv_obj_get_y(instance);                                                                            \
+        int32_t width = lv_obj_get_width(instance);                                                                      \
+        int32_t height = lv_obj_get_height(instance);                                                                    \
+        int32_t left = lv_obj_get_x(instance);                                                                           \
+        int32_t top = lv_obj_get_y(instance);                                                                            \
         JSValue obj = JS_NewObject(ctx);                                                                                    \
         JS_SetPropertyStr(ctx, obj, "width", JS_NewInt32(ctx, static_cast<int32_t>(width)));                                \
         JS_SetPropertyStr(ctx, obj, "height", JS_NewInt32(ctx, static_cast<int32_t>(height)));                              \

@@ -194,10 +194,10 @@ void BasicComponent::setBackgroundImage (uint8_t* buf, size_t buf_len, int32_t s
         if (buf != nullptr) {
             uint8_t* img_data = GetImgDesc(buf, buf_len, img_desc);
             if (img_data != nullptr) {
-                lv_style_set_bg_img_src(style, img_desc);
+                lv_style_set_bg_image_src(style, img_desc);
             }
         } else {
-            lv_style_set_bg_img_src(style, NULL);
+            lv_style_set_bg_image_src(style, NULL);
         }
 
         this->image_desc_map[style_type] = img_desc;
@@ -214,7 +214,7 @@ void BasicComponent::setBackgroundImage (uint8_t* buf, size_t buf_len, int32_t s
         }
         this->symbol_map[style_type] = symbol;
 
-        lv_style_set_bg_img_src(style, this->symbol_map[style_type].c_str());
+        lv_style_set_bg_image_src(style, this->symbol_map[style_type].c_str());
     }
 
     lv_obj_invalidate(this->instance);
@@ -223,8 +223,8 @@ void BasicComponent::setBackgroundImage (uint8_t* buf, size_t buf_len, int32_t s
 BasicComponent::~BasicComponent () {
     comp_map.erase(this->uid);
 
-    const lv_coord_t* ptr1 = this->grid_row_desc;
-    const lv_coord_t* ptr2 = this->grid_column_desc;
+    const int32_t* ptr1 = this->grid_row_desc;
+    const int32_t* ptr2 = this->grid_column_desc;
 
     for(auto& desc : this->image_desc_map) {
         if (desc.second != nullptr) {
@@ -237,10 +237,10 @@ BasicComponent::~BasicComponent () {
     }
 
     if (ptr1) {
-        free((lv_coord_t*)(ptr1));
+        free((int32_t*)(ptr1));
     }
     if (ptr2) {
-        free((lv_coord_t*)(ptr2));
+        free((int32_t*)(ptr2));
     }
 
     for(auto &style : style_map) {
@@ -251,7 +251,7 @@ BasicComponent::~BasicComponent () {
     // Detach the callback and delete only a live object.
     if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
         lv_obj_remove_event_cb(this->instance, &BasicComponent::EventCallback);
-        lv_obj_del(this->instance);
+        lv_obj_delete(this->instance);
     }
     this->instance = nullptr;
 };
@@ -265,11 +265,15 @@ void BasicComponent::setAlignTo (int32_t align_type, int32_t x, int32_t y, Basic
 };
 
 void BasicComponent::moveToFront () {
-    lv_obj_move_foreground(this->instance);
+    lv_obj_t* parent = lv_obj_get_parent(this->instance);
+    if (parent == nullptr) {
+        return;
+    }
+    lv_obj_move_to_index(this->instance, lv_obj_get_child_count(parent) - 1);
 };
 
 void BasicComponent::moveToBackground () {
-    lv_obj_move_background(this->instance);
+    lv_obj_move_to_index(this->instance, 0);
 };
 
 void BasicComponent::scrollIntoView () {

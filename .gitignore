@@ -4,9 +4,10 @@
 .clangd
 .git-commit-msg-tmp.txt
 
-# Build folders
+# Build folders. The leading / keeps this to the repository root; without it
+# the pattern also swallows doc/build.
 debug/
-build*/
+/build*/
 dev_*/
 **/.cache/
 

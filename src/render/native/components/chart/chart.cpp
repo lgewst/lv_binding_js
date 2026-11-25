@@ -10,7 +10,7 @@ Chart::Chart(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-    lv_obj_clear_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_remove_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
     lv_obj_set_user_data(this->instance, this);
     this->initStyle(LV_PART_MAIN);
 
@@ -175,7 +175,7 @@ lv_obj_t* Chart::ensureScale (lv_obj_t** scale, lv_scale_mode_t mode) {
 
     lv_obj_t* scale_parent = lv_obj_get_parent(this->alignInstance());
     *scale = lv_scale_create(scale_parent != nullptr ? scale_parent : this->alignInstance());
-    lv_obj_clear_flag(*scale, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(*scale, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(*scale, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_scale_set_mode(*scale, mode);
     this->layoutScales();

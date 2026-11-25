@@ -23,6 +23,7 @@
     "typecheck:react": "tsc -p src/render/react/core --noEmit",
     "gen:all": "python scripts/codegen.py",
     "gen:all:check": "python scripts/codegen.py --check",
+    "check:lvgl-api-names": "python scripts/check-lvgl-api-names.py",
     "test:wiki": "python -m unittest discover -s doc/wiki -p \"test_*.py\"",
     "test:unit": "node scripts/run-specs.js"
   },
