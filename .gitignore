@@ -16,6 +16,9 @@ CMakeCache.txt
 
 # Generated JS files
 /test/**/*.js
+# Keep the handwritten code generation checks tracked by Git.
+!/test/autogen/api.js
+
 /demo/**/*.js
 
 # MacOS

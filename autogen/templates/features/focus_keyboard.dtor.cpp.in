@@ -1,0 +1,6 @@
+    if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &${native_class}::raiseKeyboard);
+        lv_obj_remove_event_cb(this->instance, &${native_class}::hideKeyboard);
+        lv_obj_remove_event_cb(this->instance, &${native_class}::releaseKeyboardOnDelete);
+    }
+    this->releaseKeyboard();

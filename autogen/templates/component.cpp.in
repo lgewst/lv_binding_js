@@ -1,0 +1,12 @@
+// Widget implementation generated from the manifest.
+#include "${nativeDir}.hpp"
+#include <cstdlib>
+
+${nativeClass}::${nativeClass}(std::string uid${constructor_parameters}, lv_obj_t* parent) : BasicComponent(uid) {
+    this->type = ${compType};
+    this->uid = uid;
+    this->instance = ${lvglCreate}(${parent_expression});
+${after_create}${setup}
+}
+
+${definitions}

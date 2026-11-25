@@ -1,0 +1,13 @@
+std::vector<lv_chart_series_t*> left_axis;
+std::vector<lv_chart_series_t*> bottom_axis;
+std::vector<lv_chart_series_t*> right_axis;
+std::vector<lv_chart_series_t*> top_axis;
+
+std::vector<std::string> left_axis_labels;
+std::vector<std::string> right_axis_labels;
+std::vector<std::string> top_axis_labels;
+std::vector<std::string> bottom_axis_labels;
+
+lv_obj_t* alignInstance () override {
+    return this->zoom_wrapper != nullptr ? this->zoom_wrapper : this->instance;
+}

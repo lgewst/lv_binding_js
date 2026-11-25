@@ -85,7 +85,7 @@ void BasicComponent::setTransition (JSContext* ctx, JSValue obj, lv_style_t* sty
     lv_style_prop_t* old_transProps = this->trans_props_map[type];
 
     this->trans_props_map[type] = (lv_style_prop_t*)malloc((len + 1) * sizeof(lv_style_prop_t));
-    
+
     JSValue props = JS_GetPropertyUint32(ctx, obj, 1);
     int32_t prop_key;
     for(int i=0; i < len; i++) {
@@ -190,7 +190,7 @@ void BasicComponent::setBackgroundImage (uint8_t* buf, size_t buf_len, int32_t s
         }
         img_desc = static_cast<lv_img_dsc_t_1*>(malloc(sizeof(lv_img_dsc_t_1)));
         image_desc_map[style_type] = img_desc;
-            
+
         if (buf != nullptr) {
             uint8_t* img_data = GetImgDesc(buf, buf_len, img_desc);
             if (img_data != nullptr) {
@@ -225,7 +225,7 @@ BasicComponent::~BasicComponent () {
 
     const lv_coord_t* ptr1 = this->grid_row_desc;
     const lv_coord_t* ptr2 = this->grid_column_desc;
-    
+
     for(auto& desc : this->image_desc_map) {
         if (desc.second != nullptr) {
             const uint8_t* buf = (static_cast<lv_img_dsc_t_1*>(desc.second))->dsc.data;
@@ -247,10 +247,10 @@ BasicComponent::~BasicComponent () {
         lv_style_reset(style.second);
     }
 
-    // close() deletes this object; JS unRegistEvent clears handlers but cannot reach
-    // the LVGL callback on the finalizer-only path. Detach callback before lv_obj_del.
-    lv_obj_remove_event_cb(this->instance, &BasicComponent::EventCallback);
+    // Avoid access to objects already deleted by a parent or derived class.
+    // Detach the callback and delete only a live object.
     if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &BasicComponent::EventCallback);
         lv_obj_del(this->instance);
     }
     this->instance = nullptr;

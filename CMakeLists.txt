@@ -7,6 +7,9 @@ set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lv_conf.h CACHE INTERNAL "LV_CONF_P
 
 set(BUILD_NATIVE OFF CACHE BOOL "Build wasm3 with native support")
 set(BUILD_LVGL_SIMULATOR OFF CACHE BOOL "Build as lvgl simulator")
+option(USE_GENERATED_SWITCH_WRAPPER "Build the generated Switch JS/C++ wrapper" OFF)
+set(GENERATED_CPP_WIDGETS "" CACHE STRING "Semicolon-separated generated C++ wrapper widgets")
+set(GENERATED_CPP_COMPONENTS "" CACHE STRING "Semicolon-separated generated C++ widget implementations")
 
 find_path(LVGL_PATH lvgl.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/deps PATH_SUFFIXES lvgl)
 
@@ -85,6 +88,134 @@ add_executable(lvgljs
     src/render/native/components/component.cpp
     src/render/native/bootstrap/render_bootstrap.cpp
 )
+
+# Replace only selected widgets with generated code. Use handwritten code by default.
+set(_generated_cpp_widgets ${GENERATED_CPP_WIDGETS})
+set(_generated_cpp_components ${GENERATED_CPP_COMPONENTS})
+list(REMOVE_DUPLICATES _generated_cpp_components)
+list(APPEND _generated_cpp_widgets ${_generated_cpp_components})
+if(USE_GENERATED_SWITCH_WRAPPER)
+    list(APPEND _generated_cpp_widgets Switch)
+endif()
+list(REMOVE_DUPLICATES _generated_cpp_widgets)
+get_target_property(_native_sources lvgljs SOURCES)
+set(_generated_cpp_owners "")
+if(_generated_cpp_widgets)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    file(GLOB _component_feature_templates CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/features/*.in")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/data/widgets_manifest.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_emitter.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_rules.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/autogen/widget_cpp_emitter.py")
+endif()
+set(_generated_component_outputs "")
+foreach(_widget IN LISTS _generated_cpp_components)
+    # Check generated headers against wrapper calls before resolving paths.
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            --widget "${_widget}" --target all --describe
+        RESULT_VARIABLE _component_result OUTPUT_VARIABLE _component_json ERROR_VARIABLE _component_error
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _component_result EQUAL 0)
+        message(FATAL_ERROR "Cannot generate component ${_widget}: ${_component_error}")
+    endif()
+    string(JSON _component_source GET "${_component_json}" componentSource)
+    string(JSON _component_header GET "${_component_json}" componentHeader)
+    string(JSON _component_define GET "${_component_json}" headerDefine)
+    string(JSON _component_dir GET "${_component_json}" nativeDir)
+    if(_component_source IN_LIST _generated_component_outputs)
+        continue()
+    endif()
+    set(_manual_component "src/render/native/components/${_component_dir}/${_component_dir}.cpp")
+    list(FIND _native_sources "${_manual_component}" _component_index)
+    if(_component_index EQUAL -1)
+        message(FATAL_ERROR "No compiled handwritten component to replace: ${_widget}")
+    endif()
+    list(REMOVE_AT _native_sources ${_component_index})
+    add_custom_command(
+        OUTPUT "${_component_source}" "${_component_header}"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            --widget "${_widget}" --target component
+        COMMAND "${CMAKE_COMMAND}" -E touch "${_component_source}" "${_component_header}"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/data/widgets_manifest.json"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/widget_cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_rules.py"
+            ${_component_feature_templates}
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/component.cpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/component.hpp.in"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating ${_widget} C++ implementation and header"
+        VERBATIM)
+    list(APPEND _generated_component_outputs "${_component_source}" "${_component_header}")
+    list(APPEND _native_sources "${_component_source}")
+    target_compile_definitions(lvgljs PRIVATE "${_component_define}=1")
+endforeach()
+if(_generated_component_outputs)
+    # Generate headers before compilation and include the flat components directory.
+    add_custom_target(generate_cpp_components DEPENDS ${_generated_component_outputs})
+    add_dependencies(lvgljs generate_cpp_components)
+    target_include_directories(lvgljs BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/autogen/generated")
+endif()
+foreach(_widget IN LISTS _generated_cpp_widgets)
+    # Use native paths from the manifest: Tabs uses tabview, and Input shares Textarea.
+    set(_wrapper_component_args "")
+    if(_widget IN_LIST _generated_cpp_components)
+        list(APPEND _wrapper_component_args --component-header)
+    endif()
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            --widget "${_widget}" ${_wrapper_component_args} --describe
+        RESULT_VARIABLE _describe_result OUTPUT_VARIABLE _describe_json ERROR_VARIABLE _describe_error
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _describe_result EQUAL 0)
+        message(FATAL_ERROR "Cannot generate ${_widget}: ${_describe_error}")
+    endif()
+    string(JSON _owner GET "${_describe_json}" owner)
+    if(_owner IN_LIST _generated_cpp_components)
+        set(_wrapper_component_args --component-header)
+    endif()
+    string(JSON _source_name GET "${_describe_json}" nativeDir)
+    string(JSON _output GET "${_describe_json}" output)
+    if(_owner IN_LIST _generated_cpp_owners)
+        continue()
+    endif()
+    list(APPEND _generated_cpp_owners "${_owner}")
+    set(_manual "src/render/native/components/${_source_name}/${_source_name}_wrap.cpp")
+    list(FIND _native_sources "${_manual}" _manual_index)
+    if(_manual_index EQUAL -1)
+        message(FATAL_ERROR "No compiled handwritten wrapper to replace: ${_widget} (${_manual})")
+    endif()
+    list(REMOVE_AT _native_sources ${_manual_index})
+    add_custom_command(
+        OUTPUT "${_output}"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            --widget "${_owner}" ${_wrapper_component_args}
+        COMMAND "${CMAKE_COMMAND}" -E touch "${_output}"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/component_cpp_rules.py"
+            ${_component_feature_templates}
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/component.cpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/component.hpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/widget_cpp_emitter.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/widget_wrap.cpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/value_helpers.cpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/autogen/templates/axis_helpers.cpp.in"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/data/widgets_manifest.json"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating ${_widget} JS/C++ wrapper"
+        VERBATIM
+    )
+    list(APPEND _native_sources "${_output}")
+endforeach()
+set_property(TARGET lvgljs PROPERTY SOURCES "${_native_sources}")
 
 if(BUILD_LVGL_SIMULATOR)
     if (MSVC)

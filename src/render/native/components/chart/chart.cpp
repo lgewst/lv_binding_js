@@ -20,11 +20,20 @@ Chart::Chart(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 };
 
 Chart::~Chart() {
-    if (this->scale_left) lv_obj_delete(this->scale_left);
-    if (this->scale_right) lv_obj_delete(this->scale_right);
-    if (this->scale_top) lv_obj_delete(this->scale_top);
-    if (this->scale_bottom) lv_obj_delete(this->scale_bottom);
-    if (this->zoom_wrapper) lv_obj_delete(this->zoom_wrapper);
+    // Detach the layout callback before deleting chart axes.
+    if (this->instance != nullptr && lv_obj_is_valid(this->instance)) {
+        lv_obj_remove_event_cb(this->instance, &Chart::realign_scales_cb);
+    }
+
+    // Skip axes and zoom objects already deleted by their parent.
+    for (lv_obj_t** object : {&this->scale_left, &this->scale_right,
+                             &this->scale_top, &this->scale_bottom,
+                             &this->zoom_wrapper}) {
+        if (*object != nullptr && lv_obj_is_valid(*object)) {
+            lv_obj_delete(*object);
+        }
+        *object = nullptr;
+    }
 };
 
 void Chart::ensureZoomWrapper () {

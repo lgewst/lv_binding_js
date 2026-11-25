@@ -1,0 +1,3 @@
+    lv_obj_add_event_cb(this->instance, &${native_class}::raiseKeyboard, LV_EVENT_FOCUSED, this);
+    lv_obj_add_event_cb(this->instance, &${native_class}::hideKeyboard, LV_EVENT_DEFOCUSED, this);
+    lv_obj_add_event_cb(this->instance, &${native_class}::releaseKeyboardOnDelete, LV_EVENT_DELETE, this);

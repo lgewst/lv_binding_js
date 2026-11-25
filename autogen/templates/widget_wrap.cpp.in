@@ -1,0 +1,105 @@
+// File generated from the manifest by cpp_emitter.py.
+${component_include}
+#include <new>
+
+static JSClassID ${native_class}ClassID;
+
+// Add shared style, event, and object lifetime handling.
+WRAPPED_JS_SETSTYLE(${native_class}, "${native_class}")
+WRAPPED_JS_AddEventListener(${native_class}, "${native_class}")
+WRAPPED_JS_RemoveEventListener(${native_class}, "${native_class}")
+${alignment_macros}
+STYLE_INFO(${native_class}, "${native_class}")
+${feature_macros}${movement_macros}
+WRAPPED_JS_CLOSE_COMPONENT(${native_class}, "${native_class}")
+
+// Generate JS argument converters from props and cppBinding.methods.
+${method_handlers}
+// Expose the same JS method names as the handwritten wrapper.
+static const JSCFunctionListEntry ComponentProtoFuncs[] = {
+    TJS_CFUNC_DEF("nativeSetStyle", 0, NativeCompSetStyle),
+    TJS_CFUNC_DEF("addEventListener", 0, NativeCompAddEventListener),
+    TJS_CFUNC_DEF("removeEventListener", 0, NativeCompRemoveEventListener),
+${child_entries}${alignment_entries}
+${method_entries}    JS_OBJECT_DEF("style", style_funcs, countof(style_funcs), JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE),
+    TJS_CFUNC_DEF("getBoundingClientRect", 0, GetStyleBoundClinetRect),
+${background_entry}${movement_entries}
+    TJS_CFUNC_DEF("close", 0, NativeCompCloseComponent),
+};
+
+// Connect JS new ${native_class}({uid}) calls to C++ widget construction.
+static JSValue ${native_class}Constructor(
+    JSContext* ctx, JSValueConst new_target, int argc, JSValueConst* argv) {
+    JSValue proto = JS_UNDEFINED;
+    JSValue obj = JS_UNDEFINED;
+    JSValue js_uid = JS_UNDEFINED;
+    const char* uid = nullptr;
+    COMP_REF* ref = nullptr;
+${constructor_declarations}
+
+    if (argc < 1 || !JS_IsObject(argv[0])) {
+        return JS_ThrowTypeError(ctx, "${native_class} requires an options object");
+    }
+    js_uid = JS_GetPropertyStr(ctx, argv[0], "uid");
+    if (JS_IsException(js_uid)) return JS_EXCEPTION;
+    if (!JS_IsString(js_uid)) {
+        JS_FreeValue(ctx, js_uid);
+        return JS_ThrowTypeError(ctx, "${native_class} uid must be a string");
+    }
+    uid = JS_ToCString(ctx, js_uid);
+    JS_FreeValue(ctx, js_uid);
+    if (uid == nullptr) return JS_EXCEPTION;
+${constructor_parse}
+
+    proto = JS_IsUndefined(new_target)
+        ? JS_GetClassProto(ctx, ${native_class}ClassID)
+        : JS_GetPropertyStr(ctx, new_target, "prototype");
+    if (JS_IsException(proto)) goto fail;
+    obj = JS_NewObjectProtoClass(ctx, proto, ${native_class}ClassID);
+    JS_FreeValue(ctx, proto);
+    if (JS_IsException(obj)) goto fail;
+
+    ref = static_cast<COMP_REF*>(js_mallocz(ctx, sizeof(COMP_REF)));
+    if (ref == nullptr) goto fail;
+    CompRefStoreUid(ctx, ref, uid);
+    if (ref->getUid() == nullptr) goto fail;
+    ref->comp = new (std::nothrow) ${native_class}(${constructor_arguments});
+    if (ref->comp == nullptr) {
+        JS_ThrowOutOfMemory(ctx);
+        goto fail;
+    }
+
+    JS_SetOpaque(obj, ref);
+    LV_LOG_USER("${native_class} %s created", uid);
+    JS_FreeCString(ctx, uid);
+    return obj;
+
+fail:
+    if (ref != nullptr) {
+        delete static_cast<${native_class}*>(ref->comp);
+        CompRefFreeUid(JS_GetRuntime(ctx), ref);
+        js_free(ctx, ref);
+    }
+    JS_FreeCString(ctx, uid);
+    JS_FreeValue(ctx, obj);
+    return JS_EXCEPTION;
+}
+
+COMP_FINALIZER(${native_class}Finalizer, ${native_class}, ${native_class}ClassID)
+
+static JSClassDef ${native_class}Class = {
+    .class_name = "${native_class}",
+    .finalizer = ${native_class}Finalizer,
+};
+
+void NativeComponent${native_class}Init(JSContext* ctx, JSValue ns) {
+    JS_NewClassID(JS_GetRuntime(ctx), &${native_class}ClassID);
+    JS_NewClass(JS_GetRuntime(ctx), ${native_class}ClassID, &${native_class}Class);
+    JSValue proto = JS_NewObject(ctx);
+    JS_SetPropertyFunctionList(ctx, proto, ComponentProtoFuncs, countof(ComponentProtoFuncs));
+    JS_SetClassProto(ctx, ${native_class}ClassID, proto);
+    JSValue obj = JS_NewCFunction2(ctx, ${native_class}Constructor,
+                                  "${native_class}", 1, JS_CFUNC_constructor, 0);
+    JS_SetConstructor(ctx, obj, proto);
+    JS_DefinePropertyValueStr(ctx, ns, "${native_class}", obj, JS_PROP_C_W_E);
+}

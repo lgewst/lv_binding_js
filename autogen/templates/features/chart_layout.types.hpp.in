@@ -1,0 +1,7 @@
+#ifndef LV_BINDING_AXIS_DATA_DEFINED
+#define LV_BINDING_AXIS_DATA_DEFINED
+struct axis_data {
+    int32_t color;
+    std::vector<int32_t> data;
+};
+#endif

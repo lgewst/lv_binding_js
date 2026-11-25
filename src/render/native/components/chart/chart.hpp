@@ -13,7 +13,7 @@ typedef struct axis_data {
 class Chart final : public BasicComponent {
  public:
   Chart(std::string uid, lv_obj_t* parent = nullptr);
-  ~Chart();
+  ~Chart() override;
 
   std::vector<lv_chart_series_t*> left_axis;
   std::vector<lv_chart_series_t*> bottom_axis;

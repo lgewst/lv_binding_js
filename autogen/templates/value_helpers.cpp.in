@@ -1,0 +1,24 @@
+// Release temporary JSValue objects even when reading compound arguments fails.
+struct GeneratedJSValue {
+    JSContext* ctx;
+    JSValue value;
+    GeneratedJSValue(JSContext* c, JSValue v): ctx(c), value(v) {}
+    ~GeneratedJSValue() { JS_FreeValue(ctx, value); }
+    GeneratedJSValue(const GeneratedJSValue&) = delete;
+    GeneratedJSValue& operator=(const GeneratedJSValue&) = delete;
+};
+
+static bool GeneratedIntProperty(JSContext* ctx, JSValueConst object,
+                                 const char* key, int32_t* out) {
+    GeneratedJSValue value(ctx, JS_GetPropertyStr(ctx, object, key));
+    return !JS_IsException(value.value) && JS_ToInt32(ctx, out, value.value) >= 0;
+}
+
+static bool GeneratedArrayLength(JSContext* ctx, JSValueConst array, uint32_t* out) {
+    if (!JS_IsArray(array)) {
+        JS_ThrowTypeError(ctx, "Expected an array");
+        return false;
+    }
+    GeneratedJSValue value(ctx, JS_GetPropertyStr(ctx, array, "length"));
+    return !JS_IsException(value.value) && JS_ToUint32(ctx, out, value.value) >= 0;
+}

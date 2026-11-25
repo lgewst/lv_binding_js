@@ -3,6 +3,7 @@
 #if LV_USE_SNAPSHOT
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "framebuffer32_to_rgba.h"
 #include "render/native/core/img/png/lodepng.h"
@@ -11,7 +12,11 @@ bool hal_capture_display_png(const char * path)
 {
     if(!path || path[0] == '\0') return false;
 
-    lv_obj_t * scr = lv_screen_active();
+    // Select the top layer for Mask screenshot tests.
+    // Use the active screen for all other captures.
+    const char * capture_layer = getenv("LVGLJS_CAPTURE_LAYER");
+    lv_obj_t * scr = capture_layer && strcmp(capture_layer, "top") == 0
+        ? lv_layer_top() : lv_screen_active();
     if(!scr) return false;
 
     lv_draw_buf_t * snapshot = lv_snapshot_take(scr, LV_COLOR_FORMAT_ARGB8888);

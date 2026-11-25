@@ -1,0 +1,14 @@
+// Size the overlay to the display and set its background.
+void ${native_class}::initCompStyle (int32_t type) {
+    this->ensureStyle(type);
+
+    uint32_t width, height;
+    lv_display_t* disp_default = lv_display_get_default();
+    width = lv_display_get_horizontal_resolution(disp_default);
+    height = lv_display_get_vertical_resolution(disp_default);
+
+    lv_obj_set_style_height(this->instance, height, 0);
+    lv_obj_set_style_width(this->instance, width, 0);
+    lv_obj_set_style_bg_opa(this->instance, LV_OPA_70, 0);
+    lv_obj_set_style_bg_color(this->instance, lv_color_hex(0), 0);
+}
