@@ -18,6 +18,7 @@ CMakeCache.txt
 /test/**/*.js
 # Keep the handwritten code generation checks tracked by Git.
 !/test/autogen/api.js
+!/test/autogen/react_parity.js
 
 /demo/**/*.js
 

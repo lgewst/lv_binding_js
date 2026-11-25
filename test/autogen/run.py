@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import tempfile
 
@@ -132,12 +133,48 @@ process.exitCode = rows.some(row => row.differentPixels !== 0) ? 1 : 0;
     print(f"PASS gallery: {len(rows)} pairs, different pixels 0", flush=True)
 
 
+# Types vanish at run time, so the comparison below cannot see them. Typecheck the
+# generated files where their relative imports resolve: beside the components, in
+# throwaway directories at the same depth, with each widget's manual.ts copied in.
+def react_typecheck(args, widgets):
+    components = REPO / "src/render/react/components"
+    staged = []
+    try:
+        for name in widgets:
+            folder = components / f"_generated_{name}"
+            folder.mkdir(exist_ok=True)
+            staged.append(folder)
+            for file in ("comp.ts", "config.ts"):
+                shutil.copy(REPO / "autogen/generated/react" / name / file, folder / file)
+            manual = components / name / "manual.ts"
+            if manual.is_file():
+                shutil.copy(manual, folder / "manual.ts")
+        execute(["npx", "tsc", "--noEmit"], "react-typecheck", args)
+    finally:
+        for folder in staged:
+            shutil.rmtree(folder, ignore_errors=True)
+
+
+# Regenerate React components and compare them with the hand-written ones.
+# Needs no application build: both run against stubs that record native calls.
+def react_tests(args):
+    manifest = json.loads((REPO / "scripts/data/widgets_manifest.json").read_text(encoding="utf-8"))
+    widgets = [w["reactName"] for w in manifest["widgets"] if (w.get("generate") or {}).get("ts")]
+    if not widgets:
+        raise RuntimeError("No widget is marked for TS generation")
+    for name in widgets:
+        execute(["python3", "autogen/ts_emitter.py", "--widget", name], f"ts-generate-{name}", args)
+    execute(["node", "test/autogen/react_parity.js"], "react-parity", args)
+    react_typecheck(args, widgets)
+
+
 # Select build paths and test suites through one entry point.
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path, default=REPO / "build-generated-switch")
     parser.add_argument("--compare-build-dir", type=Path, default=REPO / "build")
-    parser.add_argument("--suite", choices=("all", "api", "native", "screenshots"), default="all")
+    parser.add_argument("--suite", choices=("all", "api", "native", "react", "screenshots"),
+                        default="all")
     parser.add_argument("--iterations", type=int, default=40)
     parser.add_argument("--output-dir", type=Path, default=REPO / "_screenshots/autogen")
     args = parser.parse_args()
@@ -149,6 +186,8 @@ def main():
     if args.suite in ("all", "screenshots") and args.build_dir == args.compare_build_dir:
         parser.error("Screenshot comparison requires two different build directories")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    if args.suite in ("all", "react"):
+        react_tests(args)
     if args.suite in ("all", "native"):
         native_tests(args)
     if args.suite in ("all", "api"):

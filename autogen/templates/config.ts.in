@@ -1,0 +1,24 @@
+${header}
+import { LvgljsComponentConfig } from "../config";
+import { ${reactName}Comp, ${propsType} } from "./comp";
+
+export default class ${reactName}Config implements LvgljsComponentConfig<${propsType}, ${reactName}Comp> {
+  tagName = "${reactName}";
+  shouldSetTextContent() {
+    return false;
+  }
+  createInstance(newProps: ${propsType}, rootInstance, context, workInProgress, uid) {
+    const instance = new ${reactName}Comp(${createArgs});
+    instance.setProps(newProps, {});
+    return instance;
+  }
+  commitMount(instance, newProps: ${propsType}, internalInstanceHandle) {}
+  commitUpdate(instance, updatePayload, oldProps: ${propsType}, newProps: ${propsType}, finishedWork) {
+    instance.setProps(newProps, oldProps);
+  }
+  commitUnmount(instance) {}
+  setProps(newProps: ${propsType}, oldProps: ${propsType}) {}
+  insertBefore(child, beforeChild) {}
+  appendInitialChild(child) {}
+  appendChild(child) {}
+}
