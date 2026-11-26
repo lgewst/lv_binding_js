@@ -139,6 +139,10 @@ def load_widget(manifest: Path, react_name: str) -> dict:
         validate_declaration(entry, react_name)
         if entry.get("map") is not None:
             identifier(entry["map"], f"{react_name} constructorProps.map")
+            if entry.get("fallback") is not None:
+                require(entry["fallback"] in (entry.get("mapValues") or {}),
+                        f"{react_name}.{entry['name']}: fallback 이 mapValues 의 키가 "
+                        f"아닙니다: {entry['fallback']!r}")
             identifier(entry.get("mapSource"), f"{react_name} constructorProps.mapSource")
             require(isinstance(entry.get("mapValues"), dict) and entry["mapValues"],
                     f"{react_name}.{entry['name']}: map 에는 mapValues 가 필요합니다.")
@@ -164,12 +168,17 @@ def load_widget(manifest: Path, react_name: str) -> dict:
     # after 는 생성 세터 또는 앞에 적힌 manual 만 가리킬 수 있다. 그래야 자리가
     # 하나로 정해지고, 끼울 곳이 없는 항목이 조용히 빠지지 않는다.
     placed = {prop["name"] for prop in props}
+    anchors: set = set()
     for entry in manual:
         anchor = entry.get("after")
         if anchor is not None:
             identifier(anchor, f"{react_name}.{entry['name']} after")
             require(anchor in placed,
                     f"{react_name}.{entry['name']}: after 가 가리키는 세터가 없습니다: {anchor}")
+        require(anchor not in anchors,
+                f"{react_name}.{entry['name']}: after 가 {anchor} 로 겹칩니다. "
+                f"앞의 manual 항목을 가리키게 적을 것")
+        anchors.add(anchor)
         placed.add(entry["name"])
 
     seen: set[str] = set()
@@ -186,6 +195,18 @@ def load_widget(manifest: Path, react_name: str) -> dict:
                 f"(가능: {', '.join(sorted(KINDS))})")
         if kind not in ("styleState", "event"):
             identifier(prop.get("bridgeMethod"), f"{react_name}.{name} bridgeMethod")
+        # kind 마다 반드시 있어야 하는 필드. 없으면 생성 중에 KeyError 로 터진다.
+        if kind == "styleState":
+            # 하나이거나, 합쳐 쓰는 여러 개일 수 있다.
+            style_type = behavior.get("styleType")
+            for part in (style_type if isinstance(style_type, list) else [style_type]):
+                identifier(part, f"{react_name}.{name} styleType")
+        if kind == "enumMap":
+            identifier(behavior.get("map"), f"{react_name}.{name} behavior.map")
+            require(isinstance(behavior.get("mapValues"), dict) and behavior["mapValues"],
+                    f"{react_name}.{name}: enumMap 에는 mapValues 가 필요합니다.")
+        if kind == "event":
+            identifier(behavior.get("event"), f"{react_name}.{name} behavior.event")
 
         compare = behavior.get("compare", "strict")
         require(compare in COMPARE_OPS or compare == NO_COMPARE,

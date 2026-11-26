@@ -25,8 +25,8 @@ CMakeCache.txt
 # MacOS
 .DS_Store
 
-# NPM
-node_modules/
+# NPM. No trailing slash: node_modules is often a symlink, not a directory.
+node_modules
 src/render/react/index.js
 
 # Screenshots (capture, diff, baseline, packages ¡ª baselines published via GitHub Releases)

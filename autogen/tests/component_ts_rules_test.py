@@ -3,60 +3,16 @@
 
 from __future__ import annotations
 
-import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import component_ts_emitter as emitter
 import widget_ts_emitter as ts
+from support import base_widget, load, manual, prop, setters_of, write_manifest
 
 
-def write_manifest(folder: Path, widget: dict) -> Path:
-    path = folder / "manifest.json"
-    path.write_text(json.dumps({"version": 2, "widgets": [widget]}), encoding="utf-8")
-    return path
-
-
-def base_widget(**over) -> dict:
-    widget = {
-        "reactName": "Demo", "nativeClass": "Demo", "nativeDir": "demo",
-        "lvglCreate": "lv_demo_create", "compType": "COMP_TYPE_DEMO",
-        "status": "specified",
-        "generate": {"cpp": False, "ts": True, "nativeClass": False},
-        "props": [], "manual": [],
-        "cppBinding": {"features": ["alignment", "movement"]},
-    }
-    widget.update(over)
-    return widget
-
-
-def prop(name, kind, ts_type="number", **behavior) -> dict:
-    entry = {"name": name, "tsType": ts_type, "behavior": {"kind": kind, **behavior}}
-    if kind not in ("styleState", "event"):
-        entry["bridgeMethod"] = "set" + name[0].upper() + name[1:]
-    return entry
-
-
-def manual(name, ts_type="string", reason="규칙으로 쓸 수 없다", after=None) -> dict:
-    entry = {"name": name, "tsType": ts_type, "reason": reason}
-    if after is not None:
-        entry["after"] = after
-    return entry
-
-
-def load(widget: dict) -> dict:
-    with tempfile.TemporaryDirectory() as folder:
-        return ts.load_widget(write_manifest(Path(folder), widget), widget["reactName"])
-
-
-def setters_of(widget: dict) -> str:
-    return emitter.emit_setters(load(widget))
-
-
-# 수작업 코드가 하는 모양대로, kind 마다 한 가지씩.
 class SetterShapes(unittest.TestCase):
 
     def test_state_toggle_compares_against_old_props(self):
@@ -158,9 +114,9 @@ class SetterShapes(unittest.TestCase):
         self.assertIn('import * as lv_conf from "../../core/lv_conf";', emitter.emit_imports(widget))
 
     def test_enum_map_without_values_is_refused(self):
-        widget = load(base_widget(props=[prop("mode", "enumMap", "string", map="modes")]))
+        """생성 중에 KeyError 로 터지지 않고 명세를 읽는 자리에서 걸러야 한다."""
         with self.assertRaises(ts.TsEmitterError) as ctx:
-            emitter.emit_maps(widget)
+            load(base_widget(props=[prop("mode", "enumMap", "string", map="modes")]))
         self.assertIn("mapValues", str(ctx.exception))
 
 

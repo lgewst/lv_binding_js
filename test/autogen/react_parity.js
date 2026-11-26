@@ -67,6 +67,10 @@ const STUBS = {
       get style() { return this._style; }
       set style(v) { this._style = v; }
       close() { globalThis.__record("super.close"); }
+      // pause·resume 을 여기서 정의해 둬야 "메서드 없음" 과 "super 위임" 이
+      // 서로 다른 기록으로 남는다. 안 그러면 두 경우를 구분할 수 없다.
+      pause() { globalThis.__record("super.pause"); }
+      resume() { globalThis.__record("super.resume"); }
       appendChild(c) { globalThis.__record("super.appendChild", c && c.uid); }
       moveToFront() { globalThis.__record("super.moveToFront"); }
       moveToBackground() { globalThis.__record("super.moveToBackground"); }
@@ -210,29 +214,76 @@ function instrument(Comp, calls) {
   return proxy;
 }
 
-// 값은 kind 가 있으면 kind 에서, 없으면(manual) 선언된 타입에서 고른다.
-function valuesFor(prop) {
-  const kind = prop.behavior.kind;
+
+// 수작업 세터는 값의 모양을 보고 갈라진다. 일반적인 값을 넣으면 분기 앞에서 양쪽이
+// 똑같이 끝나 버려서, 세터가 틀려도 차이가 드러나지 않는다. 그래서 manual prop 은
+// 실제 모양을 적어 둔다. 빠진 항목이 있으면 아래에서 실패한다.
+const SERIES = [{ color: "#f00", data: [[1, 2], [3, 4]] }];
+const AXIS_OPTION = { majorLen: 5, minorLen: 2, majorNum: 4, minorNum: 2, drawSize: 10 };
+const AXIS_DATA = [{ color: "#0f0", data: [1, 2, 3] }];
+const DATE = new Date(2024, 4, 17);
+
+const MANUAL_VALUES = {
+  "Chart.scatterData": [SERIES, SERIES, [{ data: [[5, 6]] }], undefined],
+  "Chart.leftAxisOption": [AXIS_OPTION, AXIS_OPTION, { ...AXIS_OPTION, majorLen: 9 }, {}],
+  "Chart.leftAxisData": [AXIS_DATA, AXIS_DATA, [{ data: [4] }], undefined],
+  "Chart.rightAxisOption": "Chart.leftAxisOption",
+  "Chart.rightAxisData": "Chart.leftAxisData",
+  "Chart.topAxisOption": "Chart.leftAxisOption",
+  "Chart.topAxisData": "Chart.leftAxisData",
+  "Chart.bottomAxisOption": "Chart.leftAxisOption",
+  "Chart.bottomAxisData": "Chart.leftAxisData",
+  // ok 는 BUILT_IN_SYMBOL 의 키라 심볼 분기로, http 는 원격, ./a.png 는 로컬로 간다.
+  "Image.src": ["ok", "ok", "https://example.com/a.png", "./a.png", undefined],
+  "GIF.src": "Image.src",
+  "GIF.paused": [true, true, false, undefined],
+  "Text.children": ["a", "a", ["a", "b"], 1, undefined],
+  "Calendar.today": [DATE, DATE, new Date(2025, 0, 1), undefined],
+  "Calendar.shownMonth": "Calendar.today",
+  "Calendar.highLightDates": [[DATE], [DATE], [new Date(2025, 0, 1)], undefined],
+  "Keyboard.textarea": [{ uid: "t1" }, { uid: "t1" }, { uid: "t2" }, undefined],
+  "Dropdownlist.arrow": [1, 1, 2, "nope", undefined],
+  "Input.mode": ["password", "password", "text", undefined],
+  "Textarea.mode": "Input.mode",
+  "ProgressBar.style": [{ color: "#fff" }, { color: "#fff" }, { color: "#000" }],
+};
+
+function manualValues(widget, prop) {
+  const key = `${widget.reactName}.${prop.name}`;
+  let values = MANUAL_VALUES[key];
+  if (typeof values === "string") values = MANUAL_VALUES[values];
+  if (values === undefined) {
+    throw new Error(`MANUAL_VALUES 에 ${key} 가 없다. 실제 모양을 적을 것`);
+  }
+  return values;
+}
+
+// manual 이면 위 표에서, 아니면 kind 와 선언된 타입에서 고른다.
+// passive 도 behavior 가 없으므로 manual 목록에 있는지로 가른다.
+function valuesFor(prop, widget) {
+  if ((widget.manual || []).includes(prop)) return manualValues(widget, prop);
+  const kind = (prop.behavior || {}).kind;
   const type = prop.tsType || "";
   if (kind === "styleState") return [{ c: 1 }, { c: 1 }, { c: 2 }];
   if (kind === "event") return [() => {}, () => {}];
   if (kind === "tuple") return [[0, 100], [0, 100], [10, 90], [NaN, 5], "nope", [1]];
   if (kind === "options") return [["a", "b"], ["a", "b"], ["c"], undefined, "nope"];
   if (kind === "enumMap") {
-    // 조회표의 실제 키를 써야 한다. 엉뚱한 키는 양쪽 모두 아무 일도 하지 않는다.
+    // 조회표의 실제 키를 전부 써야 한다. 엉뚱한 키는 양쪽 모두 아무 일도 하지 않는다.
     const keys = Object.keys(prop.behavior.mapValues || {});
-    return [keys[0], keys[0], keys[1], "bogus"].filter((k) => k !== undefined);
+    return [keys[0], ...keys, "bogus", undefined];
   }
   if (type.startsWith("(")) return [() => {}, () => {}];
   if (type.includes("Date")) {
     const d = new Date(2024, 4, 17);
     return [d, d, new Date(2025, 0, 1), [d], undefined];
   }
-  if (type.includes("[]")) return [["a", "b"], ["a", "b"], ["c"], undefined, "nope"];
-  if (type.includes("boolean")) return [true, true, false, 1];
-  if (type.includes("string")) return ["a", "a", "b", "", undefined];
-  // "5" right after 5 separates a strict comparison from a loose one.
-  return [0, 0, 5, "5", NaN, undefined];
+  if (type.includes("[]")) return [["a", "b"], ["a", "b"], ["c"], undefined, null, "nope"];
+  if (type.includes("boolean")) return [true, true, false, 1, null, undefined];
+  if (type.includes("string")) return ["a", "a", "b", "", null, undefined];
+  // "5" right after 5 separates a strict comparison from a loose one, and
+  // null from undefined: isNaN(null) is false where isNaN(undefined) is true.
+  return [0, 0, 5, "5", NaN, null, undefined];
 }
 
 // 함수와 Date 는 structuredClone 이 못 다루므로 한 겹만 베낀다.
@@ -258,34 +309,47 @@ function scenarios(widget) {
   const out = COMMON_PROPS.map(([name, value], i) => ({
     id: `common#${i} ${name}`, props: { [name]: value }, old: {},
   }));
-  for (const prop of widget.props) {
+  // manual prop 도 똑같이 돌린다. 이게 빠지면 수작업 세터를 하나도 비교하지 않는다.
+  for (const prop of widget.props.concat(widget.manual || [])) {
     let previous = {};
-    valuesFor(prop).forEach((value, i) => {
+    valuesFor(prop, widget).forEach((value, i) => {
       const props = { [prop.name]: value };
       out.push({ id: `${prop.name}#${i} ${label(value)}`, props, old: previous });
       previous = props;
     });
   }
   for (const passive of widget.passive || []) {
-    const reader = widget.props.find((p) => (p.behavior.extraArgs || [])
-      .some((a) => a.fromProp === passive.name));
+    const reader = readerOf(widget, passive);
     if (!reader) continue;
-    for (const flag of [true, false]) {
+    for (const value of valuesFor(passive, widget).slice(0, 3)) {
       out.push({
-        id: `${reader.name} with ${passive.name}=${flag}`,
-        props: { [reader.name]: valuesFor(reader)[0], [passive.name]: flag }, old: {},
+        id: `${reader.name} with ${passive.name}=${label(value)}`,
+        props: { [reader.name]: valuesFor(reader, widget)[0], [passive.name]: value }, old: {},
       });
     }
   }
   // Setting everything at once is the only way the setter table's order shows.
   const everything = {};
-  for (const prop of widget.props) {
-    const first = valuesFor(prop)[0];
-    if (first !== undefined) everything[prop.name] = first;
+  for (const prop of widget.props.concat(widget.manual || [], widget.passive || [])) {
+    const first = valuesFor(prop, widget)[0];
+    if (first !== undefined && first !== null) everything[prop.name] = first;
   }
-  for (const passive of widget.passive || []) everything[passive.name] = true;
   out.push({ id: "all props at once", props: everything, old: {} });
   return out;
+}
+
+// passive prop 을 읽는 쪽. 명세의 readBy 가 이름을 적어 두므로 그걸 먼저 쓰고,
+// 없으면 extraArgs 와 oldStyleSheetProp 에서 찾는다.
+function readerOf(widget, passive) {
+  const all = widget.props.concat(widget.manual || []);
+  if (passive.readBy) {
+    const named = all.find((p) => p.name === passive.readBy);
+    if (named) return named;
+  }
+  const byArgs = widget.props.find((p) => (p.behavior.extraArgs || [])
+    .some((a) => a.fromProp === passive.name));
+  if (byArgs) return byArgs;
+  return widget.props.find((p) => p.behavior.oldStyleSheetProp === passive.name);
 }
 
 function replacer(key, value) {
@@ -294,11 +358,14 @@ function replacer(key, value) {
   return value;
 }
 
-function record(id, shared, run) {
+// Image·GIF 의 원격 asset 분기는 then 안에서 네이티브를 부른다. 동기로 기록하면
+// 그 호출이 아예 안 보이므로, 마이크로태스크를 비운 뒤에 찍는다.
+async function record(id, shared, run) {
   shared.length = 0;
   let error = null;
   try {
     run();
+    for (let i = 0; i < 4; i += 1) await Promise.resolve();
   } catch (e) {
     error = String((e && e.message) || e);
   }
@@ -308,14 +375,15 @@ function record(id, shared, run) {
 
 
 // setProps, then the methods the reconciler calls outside it.
-function runWidget(Comp, cases, shared) {
+async function runWidget(Comp, cases, shared) {
   // ProgressBar 의 수작업 style 세터처럼 인자를 고치는 세터가 있어, 실행마다 복제한다.
-  const results = cases.map((scenario) => {
+  const results = [];
+  for (const scenario of cases) {
     const props = clone(scenario.props);
     const old = clone(scenario.old);
-    return record(scenario.id, shared, () =>
-      instrument(Comp, shared).setProps(props, old));
-  });
+    results.push(await record(scenario.id, shared, () =>
+      instrument(Comp, shared).setProps(props, old)));
+  }
   const surface = [
     ["class setStyle", (c) => c.setStyle({ color: "#abc" })],
     ["class appendChild", (c) => {
@@ -331,13 +399,13 @@ function runWidget(Comp, cases, shared) {
     ["class pause", (c) => c.pause && c.pause()],
     ["class resume", (c) => c.resume && c.resume()],
   ];
-  // 첫 시나리오를 먼저 흘려 보낸다. Tabs 의 자식 배정처럼 setProps 가 심어 둔 값을
-  // 읽는 훅은 빈 인스턴스에서는 양쪽이 우연히 같아진다.
-  const first = cases.length ? clone(cases[0].props) : {};
+  // 전체 prop 을 넣은 인스턴스에서 부른다. Tabs 의 자식 배정처럼 setProps 가 심어
+  // 둔 값을 읽는 훅은 빈 인스턴스에서는 양쪽이 우연히 같아진다.
+  const seeded = cases.length ? clone(cases[cases.length - 1].props) : {};
   for (const [id, run] of surface) {
-    results.push(record(id, shared, () => {
+    results.push(await record(id, shared, () => {
       const comp = instrument(Comp, shared);
-      comp.setProps(first, {});
+      comp.setProps(seeded, {});
       shared.length = 0;
       run(comp);
     }));
@@ -407,14 +475,14 @@ async function main() {
       (...a) => handLog.push(a));
     const genModule = await loadModule(manifest, name, genFile, (...a) => genLog.push(a));
     const cases = scenarios(widget);
-    const hand = runWidget(handModule[`${name}Comp`], cases, handLog);
-    const gen = runWidget(genModule[`${name}Comp`], cases, genLog);
+    const hand = await runWidget(handModule[`${name}Comp`], cases, handLog);
+    const gen = await runWidget(genModule[`${name}Comp`], cases, genLog);
 
     const handConfig = await loadModule(manifest, name, path.join(HANDWRITTEN, name, "config.ts"), () => {});
     const genConfig = await loadModule(manifest, name, path.join(GENERATED, name, "config.ts"), () => {});
     const first = {};
     for (const prop of widget.props) {
-      const value = valuesFor(prop)[0];
+      const value = valuesFor(prop, widget)[0];
       if (value !== undefined) first[prop.name] = value;
     }
     hand.push({ id: "config", calls: configShape(handConfig.default), error: null },
@@ -464,7 +532,8 @@ async function main() {
   }
 
   // 생성 대상에서 빠진 위젯의 EXPECTED 블록은 위 루프가 보지 않는다.
-  for (const name of Object.keys(EXPECTED)) {
+  // 인자로 위젯을 골라 돌린 경우에는 비교 대상이 아닌 게 당연하므로 건너뛴다.
+  for (const name of wanted.length ? [] : Object.keys(EXPECTED)) {
     if (!widgets.some((w) => w.reactName === name)) {
       console.log(`EXPECTED 에 [${name}] 가 있는데 비교 대상이 아니다. 지울 것`);
       failures += 1;

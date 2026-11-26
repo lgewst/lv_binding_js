@@ -62,10 +62,9 @@
     "cppBinding.component.nativeMethods": "기존 C++에만 있는 메서드의 name과 marshal. JS 공개 메서드는 추가하지 않음.",
     "cppBinding.component.calls.targetMember": "instance 대신 보관한 LVGL 객체에 호출할 때 지정. guard=target으로 객체 수명 검사 필수.",
     "prop.behavior.mapValues": "enumMap 전용. 조회표의 키와 lv_conf 상수 이름. TS emitter 가 이 표를 생성한다",
-    "prop.behavior.elementNames": "tuple 전용. 분해할 원소 이름. 생략하면 2개는 min·max",
     "prop.required": "true 면 Props 타입에 ? 없이 쓴다. 기존 수작업 타입을 보존하기 위한 필드",
     "prop.doc": "Props 타입에 붙는 한 줄 JSDoc",
-    "widget.reactClass": "React 컴포넌트 클래스 본문의 사실. 수작업 코드에서 읽어 적었다. children: full(insertChildBefore 까지 위임) / append(appendChild 만 위임) / none(모두 빈 메서드). movement: delegate(상위 호출) / block(빈 메서드). styleResetOldSheet: setStyle 메서드가 oldStyleSheet 로 넘기는 값. constructorCalls: 생성자에서 호출하는 네이티브 메서드. close: delegate(상위 호출) / block(빈 메서드). nativeKey: NativeComponents 의 키 (reactName 과 다를 때만). propsType: Props 타입 이름 (reactName+Props 와 다를 때만). constructorProps: 생성자 인자로 받아 super 로 넘기는 prop. children=manual 이면 자식 처리 세 메서드를 manual.ts 의 manualChildren 에 위임한다",
+    "widget.reactClass": "React 컴포넌트 클래스 본문의 사실. 수작업 코드에서 읽어 적었다. children: full(insertChildBefore 까지 위임) / append(appendChild 만 위임) / none(모두 빈 메서드). movement: delegate(상위 호출) / block(빈 메서드). styleResetOldSheet: setStyle 메서드가 oldStyleSheet 로 넘기는 값. constructorCalls: 생성자에서 호출하는 네이티브 메서드. close: delegate(상위 호출) / block(빈 메서드). nativeKey: NativeComponents 의 키 (reactName 과 다를 때만). propsType: Props 타입 이름 (reactName+Props 와 다를 때만). constructorProps: 생성자 인자로 받아 super 로 넘기는 prop. children=manual 이면 자식 처리 세 메서드를 manual.ts 의 manualChildren 에 위임한다 stashProps 는 setProps 진입 시 인스턴스에 얹는 prop, instanceFields 는 생성자에서 세우는 필드다.",
     "prop.behavior.mapSource": "enumMap 조회표의 값이 오는 모듈 심볼. 기본은 lv_conf, 다른 값이면 core/lv_types 의 해당 상수표에서 가져온다"
   },
   "kinds": {

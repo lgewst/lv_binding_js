@@ -154,7 +154,12 @@ python3 test/autogen/run.py --suite react
 수작업 코드와 생성 코드를 같은 입력으로 실행해 네이티브 호출을 비교한다.
 비교 대상은 공통 prop 13종, prop 별 값 순서(manual prop 포함), 전체 prop 동시
 설정, 클래스 메서드 10종, host config 의 모양과 createInstance · commitUpdate 다.
-위젯 20개 869경우.
+
+manual prop 의 값은 `MANUAL_VALUES` 에 모양을 적어 둔다. 일반적인 값을 넣으면
+수작업 세터의 분기 앞에서 양쪽이 똑같이 끝나 버려 세터가 틀려도 차이가 드러나지
+않는다. 빠진 항목이 있으면 실패한다. 실제로 수작업 세터의 네이티브 호출 26곳을
+하나씩 망가뜨려 보면 26곳 모두 실패로 잡힌다.
+위젯 20개 1011경우.
 
 스텁으로 바꾸는 것은 `react`, `react-reconciler`, `../config`, `../../core/bridge`,
 `../../core/style` 과 그 `color` · `symbol`, `../../utils/helpers`,
@@ -163,9 +168,12 @@ python3 test/autogen/run.py --suite react
 구현을 불러온다 — 수작업 세터가 부르는 `colorTransform` · `BUILT_IN_SYMBOL` ·
 `isValidUrl` · `loadLocalAsset` 이 비교 대상이기 때문이다.
 
-전체 prop 동시 설정이 세터 순서를 드러내는 유일한 경우다. 클래스 메서드는 첫
+전체 prop 동시 설정이 세터 순서를 드러내는 유일한 경우다. 클래스 메서드는 그
 시나리오를 흘려 보낸 인스턴스에서 부른다 — 빈 인스턴스에서는 `setProps` 가 심어
-둔 값을 읽는 훅이 양쪽 모두 우연히 같아진다.
+둔 값을 읽는 훅이 양쪽 모두 우연히 같아진다 (Tabs 의 자식 배정).
+
+`Image` · `GIF` 의 원격 asset 분기는 `then` 안에서 네이티브를 부르므로, 기록은
+마이크로태스크를 비운 뒤에 찍는다.
 
 근거를 적어 둔 차이는 `react_parity.js` 의 `EXPECTED` 에 모아 두었다.
 `prop#*` 로 적으면 그 prop 의 모든 경우를 한 근거로 덮는다.

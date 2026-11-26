@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from string import Template
 
 import component_ts_rules as rules
 
 from widget_ts_emitter import (
-    CONFIG_IMPORTS, GENERATED_DIR, HEADER, TEMPLATE_DIR, TS_TYPE_REF, TS_TYPE_SOURCES,
+    CONFIG_IMPORTS, HEADER, TEMPLATE_DIR, TS_TYPE_REF, TS_TYPE_SOURCES,
     identifier, require,
 )
 
 
 def emit_imports(widget: dict) -> str:
+    react_class = widget.get("reactClass") or {}
     declarations = (widget["props"] + widget.get("manual", [])
-                    + widget.get("passive", []))
+                    + widget.get("passive", []) + react_class.get("constructorProps", []))
     referenced = {ref for p in declarations for ref in TS_TYPE_REF.findall(p["tsType"])}
     extra: dict[str, set[str]] = {}
     for ref in referenced:
@@ -41,7 +41,15 @@ def emit_imports(widget: dict) -> str:
     lines.append('import { GetBridge } from "../../core/bridge";')
     for module in sorted(set(extra) - {"../common/index", "../config", "../../core/style"}):
         lines.append("import { " + ", ".join(sorted(extra[module])) + f' }} from "{module}";')
-    return "\n".join(lines)
+    return "\n".join(lines) if lines else ""
+
+
+# comp.ts 가 이미 묶는 이름. 조회표가 이 중 하나를 쓰면 생성된 세터가 조회표 대신
+# 그 값을 읽어 버리고, 타입체크도 통과한다.
+BOUND_NAMES = frozenset((
+    "bridge", "NativeComp", "comp", "newProps", "oldProps", "setter", "manual",
+    "style", "that", "val", "arr", "GetBridge", "CommonComponentApi",
+))
 
 
 def map_tables(widget: dict) -> list[tuple[str, str, dict]]:
@@ -53,6 +61,8 @@ def map_tables(widget: dict) -> list[tuple[str, str, dict]]:
         require(isinstance(values, dict) and bool(values),
                 f"{label}: 조회표에 mapValues 가 필요합니다.")
         identifier(source, f"{label} mapSource")
+        require(name not in BOUND_NAMES,
+                f"{label}: 조회표 이름 {name} 은 생성 코드가 이미 쓰는 이름입니다.")
         if name in seen:
             require(seen[name] == (source, values),
                     f"{label}: 조회표 이름 {name} 이 다른 내용으로 겹칩니다.")

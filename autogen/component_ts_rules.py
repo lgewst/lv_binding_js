@@ -102,7 +102,7 @@ def emit_enum_map(prop: dict, react_name: str) -> list[str]:
 EMITTERS = {
     # stateToggle 은 C++ 쪽이 behavior.state 를 읽어 구분하는 kind 다.
     # React 쪽에서 나오는 코드는 value 와 같다.
-    "stateToggle": lambda prop, react_name: emit_value(prop, react_name),
+    "stateToggle": emit_value,
     "styleState": emit_style_state,
     "event": emit_event,
     "value": emit_value,
