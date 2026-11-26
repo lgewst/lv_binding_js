@@ -28,6 +28,8 @@ export declare class LvgljsNativeComponent {
   constructor(opts: Record<string, unknown>);
   close(): void;
   addEventListener(eventType: number): boolean;
+  /** component.hpp WRAPPED_JS_EventListener; false when the argument is not a number. */
+  removeEventListener(eventType: number): boolean;
   getBoundingClientRect(): LvgljsBoundingClientRect;
 }
 
@@ -240,10 +242,59 @@ export declare class Registry {
   static Window: LvgljsComponentCtor<LvgljsWindowComponent>;
 }
 
+/** src/render/native/core/dimensions/dimensions.cpp - a getter, not a method. */
+export interface LvgljsDimensions {
+  readonly window: { width: number; height: number };
+}
+
+/**
+ * src/render/native/core/theme/theme.cpp. Each field is read with JS_ToInt32 and
+ * falls back to the default theme when left out, so all three are optional
+ * numbers: the colors are 0xRRGGBB, fontSize an index into builtin_font_list.
+ */
+export interface LvgljsTheme {
+  setTheme(options: {
+    primaryColor?: number;
+    secondPrimaryValue?: number;
+    fontSize?: number;
+  }): void;
+  resetTheme(): void;
+}
+
+/**
+ * src/render/native/core/animate/animate.cpp. start() reads exactly these keys
+ * off its argument; everything is a number, and the uid fields address the
+ * callbacks the JS side registered. The native class has no other members.
+ */
+export interface LvgljsNativeAnimateStartOptions {
+  duration?: number;
+  startValue?: number;
+  endValue?: number;
+  easing?: number;
+  instanceId?: number | string;
+  useNative?: boolean;
+  delay?: number;
+  playBackDelay?: number;
+  playBackTime?: number;
+  repeatDelay?: number;
+  repeatCount?: number;
+  uid?: number;
+  execUid?: number;
+  startCbUid?: number;
+  readyCbUid?: number;
+}
+
+export declare class LvgljsNativeAnimate {
+  start(options: LvgljsNativeAnimateStartOptions): void;
+}
+
 export interface LvgljsBridge {
   NativeRender: {
     NativeComponents: typeof Registry;
     lv_conf: Record<string, number>;
+    dimensions: LvgljsDimensions;
+    theme: LvgljsTheme;
+    Animate: typeof LvgljsNativeAnimate;
   };
 }
 

@@ -41,10 +41,10 @@ import TextareaConfig from "./components/Textarea/config";
 import { ViewComp, ViewProps } from "./components/View/comp";
 import ViewConfig from "./components/View/config";
 import { registerComponent } from "./components/config";
-import reconciler from "./core/reconciler";
+import reconciler, { HostContainer } from "./core/reconciler";
 import { Renderer } from "./core/renderer";
 
-const testContainerInfo = new Set();
+const testContainerInfo: HostContainer = new Set();
 let testContainer: ReturnType<typeof reconciler.createContainer> | null = null;
 
 /** Synchronous reconciler updates for runtime leak probes (reuses one container). */

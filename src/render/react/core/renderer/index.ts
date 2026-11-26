@@ -1,12 +1,12 @@
-import reconciler from "../reconciler";
+import reconciler, { HostContainer, OpaqueRoot } from "../reconciler";
 
-const containerInfo = new Set();
+const containerInfo: HostContainer = new Set();
 
 export class Renderer {
-  static container;
-  static portalContainer;
+  static container: OpaqueRoot;
+  static portalContainer: OpaqueRoot;
 
-  static render(element, options) {
+  static render(element: unknown, options?: unknown) {
     const isConcurrent = true;
     const hydrate = false;
 
