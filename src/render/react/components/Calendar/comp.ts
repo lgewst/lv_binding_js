@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -9,44 +11,28 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeCalendar = bridge.NativeRender.NativeComponents.Calendar;
+const NativeComp = bridge.NativeRender.NativeComponents.Calendar;
 
 export type CalendarProps = CommonProps & {
+  onChange?: (event: OnChangeEvent) => void;
   today?: string;
   shownMonth?: string;
   highLightDates?: string[];
-  onChange?: (event: OnChangeEvent) => void;
 };
 
-function setCalendarProps(comp, newProps: CalendarProps, oldProps: CalendarProps) {
+function setCalendarProps(comp, newProps: CalendarProps, oldProps: Partial<CalendarProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Calendar", comp, newProps, oldProps }),
     onChange(fn) {
       handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_VALUE_CHANGED);
     },
-    today(today) {
-      if (today && today !== oldProps.today) {
-        const date = new Date(today);
-        comp.setToday(date.getFullYear(), date.getMonth() + 1, date.getDate());
-      }
-    },
-    shownMonth(month) {
-      if (month && month !== oldProps.shownMonth) {
-        const date = new Date(month);
-        comp.setShownMonth(date.getFullYear(), date.getMonth() + 1);
-      }
-    },
-    highLightDates(dates) {
-      if (Array.isArray(dates) && dates !== oldProps.highLightDates) {
-        dates = dates.map((item) => {
-          const date = new Date(item);
-          return [date.getFullYear(), date.getMonth() + 1, date.getDate()];
-        });
-        comp.setHighlightDates(dates, dates.length);
-      }
-    },
+    today: manual.today,
+    shownMonth: manual.shownMonth,
+    highLightDates: manual.highLightDates,
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -56,7 +42,7 @@ function setCalendarProps(comp, newProps: CalendarProps, oldProps: CalendarProps
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class CalendarComp extends NativeCalendar {
+export class CalendarComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -71,11 +57,10 @@ export class CalendarComp extends NativeCalendar {
       },
     });
   }
-  setProps(newProps: CalendarProps, oldProps: CalendarProps) {
+  setProps(newProps: CalendarProps, oldProps: Partial<CalendarProps>) {
     setCalendarProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Calendar";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

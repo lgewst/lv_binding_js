@@ -1,6 +1,5 @@
-import { BUILT_IN_SYMBOL } from "../../core/style/symbol";
-import { isValidUrl } from "../../utils/helpers";
-import { fetchAssetBinary, loadLocalAsset } from "../../utils/assets";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -12,52 +11,22 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeGIF = bridge.NativeRender.NativeComponents.GIF;
+const NativeComp = bridge.NativeRender.NativeComponents.GIF;
 
 export type GIFProps = CommonProps & {
   src: string;
-  /** When true, pause animation; when false, resume (also applied after the GIF loads). */
   paused?: boolean;
-}
-
-function applyGIF(comp, buffer?: ArrayBuffer, paused?: boolean) {
-  if (buffer != null) {
-    comp.setGIFBinary(buffer);
-  }
-  if (paused) {
-    comp.pause();
-  } else if (paused === false) {
-    comp.resume();
-  }
-}
+};
 
 function setGIFProps(comp, newProps: GIFProps, oldProps: Partial<GIFProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "GIF", comp, newProps, oldProps }),
-    onClick(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CLICKED);
-    },
-    src(url) {
-      if (url && url !== oldProps.src) {
-        if (BUILT_IN_SYMBOL[url]) {
-          comp.setSymbol(BUILT_IN_SYMBOL[url]);
-          return;
-        }
-        if (!isValidUrl(url)) {
-          loadLocalAsset(url, "setGIF error", (buffer) =>
-            applyGIF(comp, buffer, newProps.paused));
-        } else {
-          fetchAssetBinary(url)
-            .then((buffer) => applyGIF(comp, buffer, newProps.paused))
-            .catch(console.warn);
-        }
-      }
-    },
-    paused(shouldPause) {
-      applyGIF(comp, undefined, shouldPause);
-    },
+    src: manual.src,
+    paused: manual.paused,
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -67,7 +36,7 @@ function setGIFProps(comp, newProps: GIFProps, oldProps: Partial<GIFProps>) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class GIFComp extends NativeGIF {
+export class GIFComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -86,7 +55,6 @@ export class GIFComp extends NativeGIF {
     setGIFProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "GIF";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {
@@ -110,11 +78,5 @@ export class GIFComp extends NativeGIF {
   }
   scrollIntoView() {
     super.scrollIntoView();
-  }
-  pause() {
-    super.pause();
-  }
-  resume() {
-    super.resume();
   }
 }

@@ -1,40 +1,36 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps } from "../common/index";
-import { STYLE_TYPE, handleEvent, setStyle, styleGetterProp, applyDataPropsToDataset } from "../config";
+import {
+  EVENTTYPE_MAP,
+  STYLE_TYPE,
+  handleEvent,
+  setStyle,
+  styleGetterProp,
+  applyDataPropsToDataset,
+} from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeProgressBar = bridge.NativeRender.NativeComponents.ProgressBar;
+const NativeComp = bridge.NativeRender.NativeComponents.ProgressBar;
 
 export type ProgressBarProps = CommonProps & {
+  indicatorStyle?: StyleProps;
   value: number;
   range: number[];
+  style?: StyleProps;
   animationTime?: number;
   useAnimation?: boolean;
-  indicatorStyle?: StyleProps;
 };
 
 function setProgressBarProps(comp, newProps: ProgressBarProps, oldProps: Partial<ProgressBarProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
-    ...CommonComponentApi({
-      compName: "ProgressBar",
-      comp,
-      newProps,
-      oldProps,
-    }),
-    style(styleSheet) {
-      if (newProps.animationTime) {
-        styleSheet["style-transition-time"] = newProps.animationTime;
-      }
-      setStyle({
-        comp,
-        styleSheet,
-        compName: "ProgressBar",
-        styleType: STYLE_TYPE.PART_MAIN,
-        oldStyleSheet: oldProps.style,
-      });
-    },
+    ...CommonComponentApi({ compName: "ProgressBar", comp, newProps, oldProps }),
+    style: manual.style,
     indicatorStyle(styleSheet) {
       setStyle({
         comp,
@@ -44,15 +40,15 @@ function setProgressBarProps(comp, newProps: ProgressBarProps, oldProps: Partial
         oldStyleSheet: oldProps.style,
       });
     },
-    value(value) {
-      if (value !== oldProps.value) {
-        comp.setValue(value, !!newProps.useAnimation);
+    value(val) {
+      if (val !== oldProps.value) {
+        comp.setValue(val, !!newProps.useAnimation);
       }
     },
     range(arr) {
-      if (arr?.[0] !== oldProps?.range?.[0] || arr?.[1] !== oldProps?.range?.[1]) {
-        comp.setRange(arr[0], arr[1]);
-      }
+      if (!Array.isArray(arr)) return;
+      if (arr[0] === oldProps.range?.[0] && arr[1] === oldProps.range?.[1]) return;
+      comp.setRange(arr[0], arr[1]);
     },
   };
   Object.keys(setter).forEach((key) => {
@@ -63,7 +59,7 @@ function setProgressBarProps(comp, newProps: ProgressBarProps, oldProps: Partial
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class ProgressBarComp extends NativeProgressBar {
+export class ProgressBarComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -82,7 +78,6 @@ export class ProgressBarComp extends NativeProgressBar {
     setProgressBarProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "ProgressBar";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

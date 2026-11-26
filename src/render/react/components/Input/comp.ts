@@ -1,5 +1,7 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
-import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
+import { CommonComponentApi, CommonProps, OnChangeEvent, OnClickEvent } from "../common/index";
 import {
   EVENTTYPE_MAP,
   STYLE_TYPE,
@@ -10,52 +12,40 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeView = bridge.NativeRender.NativeComponents.Textarea;
+const NativeComp = bridge.NativeRender.NativeComponents.Textarea;
 
 export type InputProps = CommonProps & {
   placeholder: string;
-  /** `password` mode changes text to `*` */
-  mode?: "password" | "text";
   /** Maximum number of characters */
   maxlength: number;
   onChange?: (event: OnChangeEvent) => void;
-  onFocus?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
-  onBlur?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
+  onFocus?: (event: OnClickEvent) => void;
+  onBlur?: (event: OnClickEvent) => void;
   onFocusStyle: StyleProps;
   value: string;
   /** Virtual keyboard will auto raise up when focus on Input component */
   autoKeyBoard: boolean;
+  /** `password` mode changes text to `*` */
+  mode?: "password" | "text";
 };
 
 function setInputProps(comp, newProps: InputProps, oldProps: Partial<InputProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Input", comp, newProps, oldProps }),
-    placeholder(str) {
-      if (str !== oldProps.placeholder) {
-        comp.setPlaceHolder(str);
+    placeholder(val) {
+      if (val !== oldProps.placeholder) {
+        comp.setPlaceHolder(val);
       }
     },
-    mode(mode) {
-      if (mode == oldProps.mode) return;
-      if (mode === "password") {
-        comp.setPasswordMode(true);
-      } else if (oldProps.mode === "password") {
-        comp.setPasswordMode(false);
+    mode: manual.mode,
+    maxlength(val) {
+      if (val !== oldProps.maxlength) {
+        comp.setMaxLength(val);
       }
-    },
-    maxlength(len) {
-      if (len === oldProps.maxlength) return;
-      comp.setMaxLength(len);
     },
     onChange(fn) {
       handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_VALUE_CHANGED);
@@ -69,20 +59,20 @@ function setInputProps(comp, newProps: InputProps, oldProps: Partial<InputProps>
     onFocusStyle(styleSheet) {
       setStyle({
         comp,
+        styleSheet,
         compName: "Input",
         styleType: STYLE_TYPE.STATE_FOCUSED,
         oldStyleSheet: oldProps.onFocusStyle,
-        styleSheet,
       });
     },
-    value(str) {
-      if (str !== oldProps.value) {
-        comp.setText(str);
+    value(val) {
+      if (val !== oldProps.value) {
+        comp.setText(val);
       }
     },
-    autoKeyBoard(payload) {
-      if (payload !== oldProps?.autoKeyBoard) {
-        comp.setAutoKeyboard(payload);
+    autoKeyBoard(val) {
+      if (val !== oldProps.autoKeyBoard) {
+        comp.setAutoKeyboard(val);
       }
     },
   };
@@ -94,12 +84,10 @@ function setInputProps(comp, newProps: InputProps, oldProps: Partial<InputProps>
   applyDataPropsToDataset(comp, newProps);
 }
 
-/** A one line mode of Textarea */
-export class InputComp extends NativeView {
+export class InputComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
-
     super.setOneLine(true);
 
     const style = super.style;

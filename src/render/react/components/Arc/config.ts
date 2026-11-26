@@ -1,10 +1,10 @@
-import { HostConfig } from "react-reconciler";
-import { ArcComp, ArcProps } from "./comp";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
+import { ArcComp, ArcProps } from "./comp";
 
 export default class ArcConfig implements LvgljsComponentConfig<ArcProps, ArcComp> {
   tagName = "Arc";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -17,6 +17,7 @@ export default class ArcConfig implements LvgljsComponentConfig<ArcProps, ArcCom
   commitUpdate(instance, updatePayload, oldProps: ArcProps, newProps: ArcProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
+  commitUnmount(instance) {}
   setProps(newProps: ArcProps, oldProps: ArcProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}

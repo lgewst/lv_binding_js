@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
   EDropdownListArrowDirection,
@@ -11,57 +13,50 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeDropdownlist = bridge.NativeRender.NativeComponents.Dropdownlist;
+const NativeComp = bridge.NativeRender.NativeComponents.Dropdownlist;
 
 export type DropdownListProps = CommonProps & {
   items: string[];
-  arrow: typeof EDropdownListArrowDirection[keyof typeof EDropdownListArrowDirection];
   selectIndex: number;
   /** If the text is null the selected option is displayed on the items */
   text?: string;
   direction: typeof EDropdownlistDirection[keyof typeof EDropdownlistDirection];
   highlightSelect: boolean;
   onChange?: (event: OnChangeEvent) => void;
+  arrow: typeof EDropdownListArrowDirection[keyof typeof EDropdownListArrowDirection];
 };
 
-function setListProps(comp, newProps: DropdownListProps, oldProps: Partial<DropdownListProps>) {
+function setDropdownListProps(comp, newProps: DropdownListProps, oldProps: Partial<DropdownListProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
-    ...CommonComponentApi({
-      compName: "Dropdownlist",
-      comp,
-      newProps,
-      oldProps,
-    }),
-    items(items) {
-      if (items !== oldProps.items && Array.isArray(items)) {
-        comp.setItems(items, items.length);
+    ...CommonComponentApi({ compName: "Dropdownlist", comp, newProps, oldProps }),
+    items(arr) {
+      if (arr !== oldProps.items && Array.isArray(arr)) {
+        comp.setItems(arr, arr.length);
       }
     },
-    arrow(arrow) {
-      if (arrow != oldProps.arrow && typeof arrow === "number") {
-        comp.setArrowDir(arrow);
+    arrow: manual.arrow,
+    selectIndex(val) {
+      if (val !== oldProps.selectIndex) {
+        comp.setSelectIndex(val);
       }
     },
-    selectIndex(selectIndex) {
-      if (selectIndex !== oldProps.selectIndex) {
-        comp.setSelectIndex(selectIndex);
+    text(val) {
+      if (val !== oldProps.text) {
+        comp.setText(val);
       }
     },
-    text(text) {
-      if (text !== oldProps.text) {
-        comp.setText(text);
+    direction(val) {
+      if (val !== oldProps.direction) {
+        comp.setDir(val);
       }
     },
-    direction(direction) {
-      if (direction !== oldProps.direction) {
-        comp.setDir(direction);
-      }
-    },
-    highlightSelect(payload) {
-      if (payload != oldProps.highlightSelect) {
-        comp.setHighLightSelect(payload);
+    highlightSelect(val) {
+      if (val != oldProps.highlightSelect) {
+        comp.setHighLightSelect(val);
       }
     },
     onChange(fn) {
@@ -76,7 +71,7 @@ function setListProps(comp, newProps: DropdownListProps, oldProps: Partial<Dropd
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class DropdownlistComp extends NativeDropdownlist {
+export class DropdownlistComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -92,10 +87,9 @@ export class DropdownlistComp extends NativeDropdownlist {
     });
   }
   setProps(newProps: DropdownListProps, oldProps: Partial<DropdownListProps>) {
-    setListProps(this, newProps, oldProps);
+    setDropdownListProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Dropdownlist";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import * as lv_conf from "../../core/lv_conf";
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
@@ -13,7 +15,7 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeArc = bridge.NativeRender.NativeComponents.Arc;
+const NativeComp = bridge.NativeRender.NativeComponents.Arc;
 
 const modes = {
   normal: lv_conf.LV_ARC_MODE_NORMAL,
@@ -24,7 +26,6 @@ const modes = {
 export type ArcProps = CommonProps & {
   indicatorStyle?: StyleProps;
   onIndicatorPressedStyle?: StyleProps;
-  onPressedStyle?: StyleProps;
   knobStyle?: StyleProps;
   onKnobPressedStyle?: StyleProps;
   onChange?: (event: OnChangeEvent) => void;
@@ -39,7 +40,7 @@ export type ArcProps = CommonProps & {
   changeRate?: number;
 };
 
-function setArcProps(comp, newProps: ArcProps, oldProps: ArcProps) {
+function setArcProps(comp, newProps: ArcProps, oldProps: Partial<ArcProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Arc", comp, newProps, oldProps }),
     indicatorStyle(styleSheet) {
@@ -58,15 +59,6 @@ function setArcProps(comp, newProps: ArcProps, oldProps: ArcProps) {
         compName: "Arc",
         styleType: STYLE_TYPE.PART_INDICATOR | STYLE_TYPE.STATE_PRESSED,
         oldStyleSheet: oldProps.onIndicatorPressedStyle,
-      });
-    },
-    onPressedStyle(styleSheet) {
-      setStyle({
-        comp,
-        styleSheet,
-        compName: "Arc",
-        styleType: STYLE_TYPE.STATE_PRESSED,
-        oldStyleSheet: oldProps.onPressedStyle,
       });
     },
     knobStyle(styleSheet) {
@@ -146,7 +138,7 @@ function setArcProps(comp, newProps: ArcProps, oldProps: ArcProps) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class ArcComp extends NativeArc {
+export class ArcComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -161,11 +153,10 @@ export class ArcComp extends NativeArc {
       },
     });
   }
-  setProps(newProps: ArcProps, oldProps: ArcProps) {
+  setProps(newProps: ArcProps, oldProps: Partial<ArcProps>) {
     setArcProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Arc";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

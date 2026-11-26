@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
@@ -12,7 +14,7 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeView = bridge.NativeRender.NativeComponents.Checkbox;
+const NativeComp = bridge.NativeRender.NativeComponents.Checkbox;
 
 export type CheckboxProps = CommonProps & {
   checked?: boolean;
@@ -24,7 +26,7 @@ export type CheckboxProps = CommonProps & {
   onChange?: (event: OnChangeEvent) => void;
 };
 
-function setCheckboxProps(comp, newProps: CheckboxProps, oldProps: CheckboxProps) {
+function setCheckboxProps(comp, newProps: CheckboxProps, oldProps: Partial<CheckboxProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Checkbox", comp, newProps, oldProps }),
     checked(val) {
@@ -81,7 +83,7 @@ function setCheckboxProps(comp, newProps: CheckboxProps, oldProps: CheckboxProps
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class CheckboxComp extends NativeView {
+export class CheckboxComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -96,7 +98,7 @@ export class CheckboxComp extends NativeView {
       },
     });
   }
-  setProps(newProps: CheckboxProps, oldProps: CheckboxProps) {
+  setProps(newProps: CheckboxProps, oldProps: Partial<CheckboxProps>) {
     setCheckboxProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}

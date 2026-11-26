@@ -23,7 +23,7 @@ class Cli(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             manifest = write_manifest(root, base_widget(props=[prop("v", "value")]))
-            with patch.object(cli, "GENERATED_DIR", root / "out"), redirect_stdout(io.StringIO()):
+            with patch.object(cli, "COMPONENTS_DIR", root / "out"), redirect_stdout(io.StringIO()):
                 self.assertEqual(cli.main(["--widget", "Demo", "--manifest", str(manifest)]), 0)
                 self.assertEqual(
                     cli.main(["--widget", "Demo", "--manifest", str(manifest), "--check"]), 0)
@@ -35,14 +35,39 @@ class Cli(unittest.TestCase):
             root = Path(folder)
             widget = base_widget(props=[prop("v", "value")])
             manifest = write_manifest(root, widget)
-            with patch.object(cli, "GENERATED_DIR", root / "out"), redirect_stdout(io.StringIO()):
+            with patch.object(cli, "COMPONENTS_DIR", root / "out"), redirect_stdout(io.StringIO()):
                 self.assertEqual(cli.main(["--widget", "Demo", "--manifest", str(manifest)]), 0)
             widget["props"].append(prop("w", "value"))
             write_manifest(root, widget)
-            with patch.object(cli, "GENERATED_DIR", root / "out"), \
+            with patch.object(cli, "COMPONENTS_DIR", root / "out"), \
                  redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(
                     cli.main(["--widget", "Demo", "--manifest", str(manifest), "--check"]), 1)
+
+    def test_dest_generated_writes_beside_the_emitter(self):
+        """수작업 코드와 대조할 때만 쓰는 출구. 컴포넌트 자리를 건드리지 않아야 한다."""
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            manifest = write_manifest(root, base_widget(props=[prop("v", "value")]))
+            with patch.object(cli, "GENERATED_DIR", root / "gen"), \
+                 patch.object(cli, "COMPONENTS_DIR", root / "src"), \
+                 redirect_stdout(io.StringIO()):
+                self.assertEqual(cli.main(
+                    ["--widget", "Demo", "--manifest", str(manifest), "--dest", "generated"]), 0)
+            self.assertTrue((root / "gen/Demo/comp.ts").is_file())
+            self.assertFalse((root / "src").exists())
+
+    def test_every_marked_widget_is_generated_without_a_widget_option(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            first = base_widget(props=[prop("v", "value")])
+            second = base_widget(props=[prop("w", "value")])
+            second["reactName"] = "Other"
+            manifest = write_manifest(root, first, second)
+            with patch.object(cli, "COMPONENTS_DIR", root / "out"), redirect_stdout(io.StringIO()):
+                self.assertEqual(cli.main(["--manifest", str(manifest)]), 0)
+            self.assertTrue((root / "out/Demo/comp.ts").is_file())
+            self.assertTrue((root / "out/Other/comp.ts").is_file())
 
     def test_failure_is_reported_on_stderr(self):
         with tempfile.TemporaryDirectory() as folder:

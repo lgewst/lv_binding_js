@@ -70,6 +70,8 @@ def main() -> int:
     _run("doc/wiki/transition_lvgl_compare.py", *check_flag)
     _run("doc/wiki/cpp_lv_symbol_mapping.py", *check_flag)
     _run("lv_conf_gen.py", *check_flag)
+    # React 컴포넌트는 공용 명세에서 나온다. 손으로 고친 자리가 있으면 여기서 걸린다.
+    _run("autogen/ts_emitter.py", *check_flag)
 
     # typecheck should after code generation.
     _run_typecheck()

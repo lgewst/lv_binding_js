@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -11,13 +13,16 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeView = bridge.NativeRender.NativeComponents.View;
+const NativeComp = bridge.NativeRender.NativeComponents.View;
 
-export type ViewProps = CommonProps
+export type ViewProps = CommonProps & {
 
-function setViewProps(comp, newProps: ViewProps, oldProps: ViewProps) {
+};
+
+function setViewProps(comp, newProps: ViewProps, oldProps: Partial<ViewProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "View", comp, newProps, oldProps }),
+
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -27,7 +32,7 @@ function setViewProps(comp, newProps: ViewProps, oldProps: ViewProps) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class ViewComp extends NativeView {
+export class ViewComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -42,7 +47,7 @@ export class ViewComp extends NativeView {
       },
     });
   }
-  setProps(newProps: ViewProps, oldProps: ViewProps) {
+  setProps(newProps: ViewProps, oldProps: Partial<ViewProps>) {
     setViewProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {

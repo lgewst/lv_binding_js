@@ -9,7 +9,12 @@ set(BUILD_NATIVE OFF CACHE BOOL "Build wasm3 with native support")
 set(BUILD_LVGL_SIMULATOR OFF CACHE BOOL "Build as lvgl simulator")
 option(USE_GENERATED_SWITCH_WRAPPER "Build the generated Switch JS/C++ wrapper" OFF)
 set(GENERATED_CPP_WIDGETS "" CACHE STRING "Semicolon-separated generated C++ wrapper widgets")
-set(GENERATED_CPP_COMPONENTS "" CACHE STRING "Semicolon-separated generated C++ widget implementations")
+# Every widget the spec marks generate.nativeClass. Set to "" to build the
+# handwritten components instead; they stay in the tree as the comparison
+# baseline. See autogen/README.md
+set(GENERATED_CPP_COMPONENTS
+    "Switch;Arc;Chart;Checkbox;Slider;Dropdownlist;Textarea;Roller;Keyboard;ProgressBar;Calendar;Line;Button;GIF;Image;Mask;Tabs;Text;View"
+    CACHE STRING "Semicolon-separated generated C++ widget implementations")
 
 find_path(LVGL_PATH lvgl.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/deps PATH_SUFFIXES lvgl)
 

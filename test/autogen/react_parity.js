@@ -7,13 +7,34 @@
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const vm = require("vm");
+const { execFileSync } = require("child_process");
 const esbuild = require("esbuild");
 
 const REPO = path.join(__dirname, "../..");
 const MANIFEST = path.join(REPO, "scripts/data/widgets_manifest.json");
-const HANDWRITTEN = path.join(REPO, "src/render/react/components");
-const GENERATED = path.join(REPO, "autogen/generated/react");
+const COMPONENTS = path.join(REPO, "src/render/react/components");
+
+// 컴포넌트가 생성 코드로 바뀐 뒤로, 비교 기준은 바뀌기 직전 커밋이다. 거기서
+// 수작업 파일을 꺼내 쓰므로 기준이 낡지도, 누가 고칠 수도 없다.
+const BASELINE_REV = "b2705e6d51621c149b546a12ed6bfd2acaca2ebb";
+const BASELINE_DIR = path.join(os.tmpdir(), `lvgljs-baseline-${BASELINE_REV.slice(0, 12)}`);
+
+// 기준 커밋의 수작업 comp.ts · config.ts 를 한 번 꺼내 둔다. 그 시점의 수작업
+// 컴포넌트는 manual.ts 를 불러오지 않으므로 함께 꺼낼 것이 없다.
+function materializeBaseline(names) {
+  for (const name of names) {
+    for (const file of ["comp.ts", "config.ts"]) {
+      const out = path.join(BASELINE_DIR, name, file);
+      if (fs.existsSync(out)) continue;
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      const rel = `src/render/react/components/${name}/${file}`;
+      fs.writeFileSync(out, execFileSync("git", ["show", `${BASELINE_REV}:${rel}`],
+        { cwd: REPO, maxBuffer: 1 << 24 }));
+    }
+  }
+}
 
 // Only the leaves are stubbed. CommonComponentApi is loaded for real, so a
 // widget that drops its own override of a common prop is compared against the
@@ -161,10 +182,10 @@ function lvConfStub(manifest) {
 function stubPlugin(manifest, widgetName) {
   const filter = new RegExp("^(" + Object.keys(STUBS).concat("../../core/lv_conf", "../../core/lv_types")
     .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")$");
-  // The generated files sit outside the component tree, so the modules that
-  // are loaded for real have to be pointed at their true location.
-  const common = path.join(HANDWRITTEN, "common/index.ts");
-  const manual = path.join(HANDWRITTEN, widgetName, "manual.ts");
+  // 기준 쪽 파일은 임시 폴더에 있어서 상대 import 가 풀리지 않는다. 실제로
+  // 불러오는 두 모듈은 저장소 안의 자리를 직접 가리킨다.
+  const common = path.join(COMPONENTS, "common/index.ts");
+  const manual = path.join(COMPONENTS, widgetName, "manual.ts");
   return {
     name: "stubs",
     setup(build) {
@@ -456,30 +477,32 @@ async function main() {
     return 1;
   }
 
+  materializeBaseline(widgets.map((w) => w.reactName));
+
   let failures = 0;
   let accountedTotal = 0;
   let caseTotal = 0;
 
   for (const widget of widgets) {
     const name = widget.reactName;
-    const genFile = path.join(GENERATED, name, "comp.ts");
+    const genFile = path.join(COMPONENTS, name, "comp.ts");
     if (!fs.existsSync(genFile)) {
-      console.log(`${name}: 생성 결과 없음 — python3 autogen/ts_emitter.py --widget ${name}`);
+      console.log(`${name}: 컴포넌트가 없다 — python3 autogen/ts_emitter.py`);
       failures += 1;
       continue;
     }
 
     const handLog = [];
     const genLog = [];
-    const handModule = await loadModule(manifest, name, path.join(HANDWRITTEN, name, "comp.ts"),
+    const handModule = await loadModule(manifest, name, path.join(BASELINE_DIR, name, "comp.ts"),
       (...a) => handLog.push(a));
     const genModule = await loadModule(manifest, name, genFile, (...a) => genLog.push(a));
     const cases = scenarios(widget);
     const hand = await runWidget(handModule[`${name}Comp`], cases, handLog);
     const gen = await runWidget(genModule[`${name}Comp`], cases, genLog);
 
-    const handConfig = await loadModule(manifest, name, path.join(HANDWRITTEN, name, "config.ts"), () => {});
-    const genConfig = await loadModule(manifest, name, path.join(GENERATED, name, "config.ts"), () => {});
+    const handConfig = await loadModule(manifest, name, path.join(BASELINE_DIR, name, "config.ts"), () => {});
+    const genConfig = await loadModule(manifest, name, path.join(COMPONENTS, name, "config.ts"), () => {});
     const first = {};
     for (const prop of widget.props) {
       const value = valuesFor(prop, widget)[0];

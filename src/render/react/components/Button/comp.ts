@@ -1,5 +1,6 @@
-import { StyleProps } from "../../core/style";
-import { CommonComponentApi, CommonProps, OnClickEvent } from "../common/index";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
+import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
   STYLE_TYPE,
@@ -12,52 +13,16 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeButton = bridge.NativeRender.NativeComponents.Button;
+const NativeComp = bridge.NativeRender.NativeComponents.Button;
 
 export type ButtonProps = CommonProps & {
-  onPressedStyle?: StyleProps;
-  onClick?: (event: OnClickEvent) => void;
-  onPressed?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
-  onLongPressed?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
-  onLongPressRepeat?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
+
 };
 
-function setButtonProps(comp, newProps: ButtonProps, oldProps: ButtonProps) {
+function setButtonProps(comp, newProps: ButtonProps, oldProps: Partial<ButtonProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Button", comp, newProps, oldProps }),
-    onPressedStyle(styleSheet) {
-      setStyle({
-        comp,
-        styleSheet,
-        compName: "Button",
-        styleType: STYLE_TYPE.STATE_PRESSED,
-        oldStyleSheet: oldProps.onPressedStyle,
-      });
-    },
-    onClick(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CLICKED);
-    },
-    onPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_PRESSED);
-    },
-    onLongPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED);
-    },
-    onLongPressRepeat(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED_REPEAT);
-    },
+
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -67,7 +32,7 @@ function setButtonProps(comp, newProps: ButtonProps, oldProps: ButtonProps) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class ButtonComp extends NativeButton {
+export class ButtonComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -82,11 +47,10 @@ export class ButtonComp extends NativeButton {
       },
     });
   }
-  setProps(newProps: ButtonProps, oldProps: ButtonProps) {
+  setProps(newProps: ButtonProps, oldProps: Partial<ButtonProps>) {
     setButtonProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Button";
   appendInitialChild(child) {}
   appendChild(child) {
     super.appendChild(child);

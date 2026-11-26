@@ -10,9 +10,13 @@ REPO_DIR = Path(__file__).resolve().parent.parent
 AUTOGEN_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = AUTOGEN_DIR / "templates"
 GENERATED_DIR = AUTOGEN_DIR / "generated" / "react"
+COMPONENTS_DIR = AUTOGEN_DIR.parent / "src" / "render" / "react" / "components"
 DEFAULT_MANIFEST = REPO_DIR / "scripts/data/widgets_manifest.json"
 
-HEADER = "// 자동 생성 파일. 직접 수정하지 말 것. autogen/ts_emitter.py 로 다시 생성."
+# Generated files live under src/, where scripts/normalize_markdown.py rewrites
+# non-ASCII in comments, so keep this line ASCII.
+HEADER = ("// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.\n"
+          "// Regenerate with: python3 autogen/ts_emitter.py")
 
 # The hand-written sources import the whole config block whether or not every
 # symbol is used; the generated ones match so the diff stays small.

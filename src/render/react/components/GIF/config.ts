@@ -1,9 +1,10 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
 import { GIFComp, GIFProps } from "./comp";
 
 export default class GIFConfig implements LvgljsComponentConfig<GIFProps, GIFComp> {
   tagName = "GIF";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -16,6 +17,7 @@ export default class GIFConfig implements LvgljsComponentConfig<GIFProps, GIFCom
   commitUpdate(instance, updatePayload, oldProps: GIFProps, newProps: GIFProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
+  commitUnmount(instance) {}
   setProps(newProps: GIFProps, oldProps: GIFProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}

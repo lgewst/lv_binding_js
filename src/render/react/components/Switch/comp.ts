@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
@@ -21,7 +23,7 @@ export type SwitchProps = CommonProps & {
   disabled?: boolean;
 };
 
-function setSwitchProps(comp, newProps: SwitchProps, oldProps: SwitchProps) {
+function setSwitchProps(comp, newProps: SwitchProps, oldProps: Partial<SwitchProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Switch", comp, newProps, oldProps }),
     checkedStyle(styleSheet) {
@@ -70,7 +72,7 @@ export class SwitchComp extends NativeComp {
       },
     });
   }
-  setProps(newProps, oldProps) {
+  setProps(newProps: SwitchProps, oldProps: Partial<SwitchProps>) {
     setSwitchProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}

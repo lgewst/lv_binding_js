@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import * as lv_conf from "../../core/lv_conf";
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
@@ -8,12 +10,13 @@ import {
   styleGetterProp,
   applyDataPropsToDataset,
 } from "../config";
-import { InputComp } from "../Input/comp";
 
 import { GetBridge } from "../../core/bridge";
+import { InputComp } from "../Input/comp";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeView = bridge.NativeRender.NativeComponents.Keyboard;
+const NativeComp = bridge.NativeRender.NativeComponents.Keyboard;
 
 const modes = {
   lower: lv_conf.LV_KEYBOARD_MODE_TEXT_LOWER,
@@ -23,31 +26,22 @@ const modes = {
 };
 
 export type KeyboardProps = CommonProps & {
-  /** Sets keyboard mode:
-   * - lower, Display lower case letters
-   * - upper, Display upper case letters
-   * - special, Display special characters
-   * - number, Display numbers, +/- sign, and decimal dot
-  */
-  mode: typeof modes;
-  textarea: InputComp;
+  mode: "lower" | "upper" | "special" | "number";
   onClose?: () => void;
   onOk?: () => void;
+  textarea: InputComp;
 };
 
 function setKeyboardProps(comp, newProps: KeyboardProps, oldProps: Partial<KeyboardProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Keyboard", comp, newProps, oldProps }),
-    mode(mode) {
-      if (mode !== oldProps.mode && typeof modes[mode] !== "undefined") {
-        comp.setMode(modes[mode]);
+    mode(val) {
+      if (val !== oldProps.mode && typeof modes[val] !== "undefined") {
+        comp.setMode(modes[val]);
       }
     },
-    textarea(textarea) {
-      if (textarea?.uid !== oldProps.textarea?.uid) {
-        comp.setTextarea(textarea);
-      }
-    },
+    textarea: manual.textarea,
     onClose(fn) {
       handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CANCEL);
     },
@@ -63,7 +57,7 @@ function setKeyboardProps(comp, newProps: KeyboardProps, oldProps: Partial<Keybo
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class KeyboardComp extends NativeView {
+export class KeyboardComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;

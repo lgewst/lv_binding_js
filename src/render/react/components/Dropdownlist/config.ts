@@ -1,9 +1,10 @@
-import { DropdownlistComp, DropdownListProps } from "./comp";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
+import { DropdownlistComp, DropdownListProps } from "./comp";
 
 export default class DropdownlistConfig implements LvgljsComponentConfig<DropdownListProps, DropdownlistComp> {
   tagName = "Dropdownlist";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -16,6 +17,7 @@ export default class DropdownlistConfig implements LvgljsComponentConfig<Dropdow
   commitUpdate(instance, updatePayload, oldProps: DropdownListProps, newProps: DropdownListProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
+  commitUnmount(instance) {}
   setProps(newProps: DropdownListProps, oldProps: DropdownListProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}

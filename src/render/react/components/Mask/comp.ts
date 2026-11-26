@@ -1,5 +1,6 @@
-import { StyleProps } from "../../core/style";
-import { CommonComponentApi, CommonProps, OnClickEvent } from "../common/index";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
+import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
   STYLE_TYPE,
@@ -12,52 +13,16 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeMask = bridge.NativeRender.NativeComponents.Mask;
+const NativeComp = bridge.NativeRender.NativeComponents.Mask;
 
 export type MaskProps = CommonProps & {
-  onPressedStyle?: StyleProps;
-  onClick?: (event: OnClickEvent) => void;
-  onPressed?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
-  onLongPressed?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
-  onLongPressRepeat?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
+
 };
 
-function setMaskProps(comp, newProps: MaskProps, oldProps: MaskProps) {
+function setMaskProps(comp, newProps: MaskProps, oldProps: Partial<MaskProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Mask", comp, newProps, oldProps }),
-    onPressedStyle(styleSheet) {
-      setStyle({
-        comp,
-        styleSheet,
-        compName: "Mask",
-        styleType: STYLE_TYPE.STATE_PRESSED,
-        oldStyleSheet: oldProps.onPressedStyle,
-      });
-    },
-    onClick(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CLICKED);
-    },
-    onPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_PRESSED);
-    },
-    onLongPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED);
-    },
-    onLongPressRepeat(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED_REPEAT);
-    },
+
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -67,7 +32,7 @@ function setMaskProps(comp, newProps: MaskProps, oldProps: MaskProps) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class MaskComp extends NativeMask {
+export class MaskComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -82,11 +47,10 @@ export class MaskComp extends NativeMask {
       },
     });
   }
-  setProps(newProps: MaskProps, oldProps: MaskProps) {
+  setProps(newProps: MaskProps, oldProps: Partial<MaskProps>) {
     setMaskProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Mask";
   appendInitialChild(child) {}
   appendChild(child) {
     super.appendChild(child);

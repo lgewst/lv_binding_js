@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -9,30 +11,20 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeText = bridge.NativeRender.NativeComponents.Text;
+const NativeComp = bridge.NativeRender.NativeComponents.Text;
 
 export type TextProps = CommonProps & {
   children: string | number | (string | number)[];
 };
 
 function setTextProps(comp, newProps: TextProps, oldProps: Partial<TextProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Text", comp, newProps, oldProps }),
-    children(str) {
-      const type = typeof str;
-      if ((type == "string" || type == "number") && oldProps.children !== str) {
-        comp.setText(String(str));
-      } else if (Array.isArray(str)) {
-        const isStringArr = str.every(
-          (item) => typeof item === "string" || typeof item === "number",
-        );
-        if (isStringArr) {
-          comp.setText(str.join(""));
-        }
-      }
-    },
+    children: manual.children,
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -42,7 +34,7 @@ function setTextProps(comp, newProps: TextProps, oldProps: Partial<TextProps>) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class TextComp extends NativeText {
+export class TextComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;

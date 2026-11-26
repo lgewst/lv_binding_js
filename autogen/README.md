@@ -70,11 +70,21 @@ C++ 쪽과 같은 층으로 나눠 두었다.
 양식은 `templates/comp.ts.in` 과 `templates/config.ts.in`.
 
 ```sh
-python3 autogen/ts_emitter.py --widget Arc
-python3 autogen/ts_emitter.py --widget Arc --check
+python3 autogen/ts_emitter.py                  # 대상 전부
+python3 autogen/ts_emitter.py --widget Arc     # 하나만
+python3 autogen/ts_emitter.py --check          # 저장된 것이 최신인지
 ```
 
-결과는 `autogen/generated/react/<ReactName>/` 에 저장. 수작업 파일을 덮지 않는다.
+결과는 `src/render/react/components/<ReactName>/` 의 `comp.ts` · `config.ts` 다.
+**이 두 파일이 생성물이다** — 손으로 고치면 `gen:all:check` 가 걸러낸다. 같은
+디렉터리의 `manual.ts` 는 수작업이고 생성 대상이 아니다.
+
+`--dest generated` 를 주면 `autogen/generated/react/` 로 빠진다. 수작업 코드와
+대조할 때만 쓴다.
+
+C++ 쪽은 자리를 덮지 않고 설정 시점에 바꿔 끼운다. `GENERATED_CPP_COMPONENTS` 가
+기본으로 19개 전부라 보통 빌드는 생성 코드를 쓰고, 수작업 `.cpp` 는 비교 기준으로
+트리에 남는다. `""` 로 주면 수작업 쪽이 빌드된다.
 
 ### 생성 규칙
 
@@ -150,8 +160,10 @@ python3 -m unittest discover -s autogen/tests -p '*_test.py'
 python3 test/autogen/run.py --suite react
 ```
 
-`--suite react` 는 빌드가 필요 없다. 생성 후 `test/autogen/react_parity.js` 로
-수작업 코드와 생성 코드를 같은 입력으로 실행해 네이티브 호출을 비교한다.
+`--suite react` 는 빌드가 필요 없다. `test/autogen/react_parity.js` 가 지금
+컴포넌트 자리에 있는 생성 코드와, 전환 직전 커밋에서 꺼낸 수작업 코드를 같은
+입력으로 실행해 네이티브 호출을 비교한다. 기준 커밋은 해시로 박아 두었으므로
+(`BASELINE_REV`) 낡거나 누가 고칠 수 없다.
 비교 대상은 공통 prop 13종, prop 별 값 순서(manual prop 포함), 전체 prop 동시
 설정, 클래스 메서드 10종, host config 의 모양과 createInstance · commitUpdate 다.
 

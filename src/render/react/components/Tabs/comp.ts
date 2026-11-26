@@ -1,3 +1,6 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
+import { LV_DIR_MAP } from "../../core/lv_types";
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -9,32 +12,28 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
-import { LV_DIR_MAP } from "../../core/lv_types";
+import { manualChildren } from "./manual";
 
 const bridge = GetBridge();
-const NativeTabs = bridge.NativeRender.NativeComponents.TabView;
+const NativeComp = bridge.NativeRender.NativeComponents.TabView;
+
+const tabPositionObj = {
+  left: LV_DIR_MAP.left,
+  top: LV_DIR_MAP.top,
+  right: LV_DIR_MAP.right,
+  bottom: LV_DIR_MAP.bottom,
+};
 
 export type TabsProps = CommonProps & {
-  tabs: string[];
   tabPosition: "left" | "top" | "right" | "bottom";
   tabSize?: number;
+  tabs: string[];
 };
 
 function setTabsProps(comp, newProps: TabsProps, oldProps: Partial<TabsProps>) {
   const setter = {
     ...CommonComponentApi({ compName: "Tabs", comp, newProps, oldProps }),
-    onClick(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CLICKED);
-    },
-    onPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_PRESSED);
-    },
-    onLongPressed(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED);
-    },
-    onLongPressRepeat(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_LONG_PRESSED_REPEAT);
-    },
+
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -44,14 +43,7 @@ function setTabsProps(comp, newProps: TabsProps, oldProps: Partial<TabsProps>) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-const tabPositionObj = {
-  left: LV_DIR_MAP.left,
-  top: LV_DIR_MAP.top,
-  right: LV_DIR_MAP.right,
-  bottom: LV_DIR_MAP.bottom,
-};
-
-export class TabsComp extends NativeTabs {
+export class TabsComp extends NativeComp {
   constructor({ uid, tabPosition, tabSize = 0 }) {
     tabPosition = tabPositionObj[tabPosition] || tabPositionObj.top;
     super({ uid, tabPosition, tabSize });
@@ -72,14 +64,14 @@ export class TabsComp extends NativeTabs {
     this.tabs = newProps.tabs;
     setTabsProps(this, newProps, oldProps);
   }
-  insertBefore(child, beforeChild) {}
-  static tagName = "Tabs";
+  insertBefore(child, beforeChild) {
+    manualChildren.insertBefore.call(this, child, beforeChild);
+  }
   appendInitialChild(child) {
-    this.appendChild(child);
+    manualChildren.appendInitialChild.call(this, child);
   }
   appendChild(child) {
-    this.setTab(this.tabs[this.currentAppendIndex] || "", child);
-    this.currentAppendIndex++;
+    manualChildren.appendChild.call(this, child);
   }
   close() {
     super.close();
