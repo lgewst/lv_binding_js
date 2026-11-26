@@ -13,7 +13,7 @@ import * as React from 'react';
 
 const components = new Map<LvgljsComponentConfig<any, any>['tagName'], LvgljsComponentConfig<any, any>>();
 
-export const getComponentByTagName = (tagName) => {
+export const getComponentByTagName = (tagName: string) => {
   const config = components.get(tagName);
   if (!config) {
     throw `Unknown component ${tagName}`;
