@@ -67,20 +67,27 @@ jobs:
             -DUSE_EXTERNAL_FFI=ON
       - name: Build lvgljs
         run: cmake --build build -j
-      - name: Run tests
-        run: yarn capture:screenshots
       # Compile once more with the compatibility headers switched off. This is what
       # a major LVGL bump will look like, and it catches names the grep above cannot
-      # see (macro expansions, names reached through other headers).
+      # see (macro expansions, names reached through other headers). The generated
+      # components are included because the build above leaves them out and they
+      # carry LVGL calls of their own. This job has no SDL, so the simulator is
+      # covered by the same step in the linux job. See doc/build/lvgl-api-names.md
       - name: Build without LVGL API mapping
         run: |
           cmake -B build-strict -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_LVGL_SIMULATOR=OFF \
             -DUSE_EXTERNAL_FFI=ON \
+            -DGENERATED_CPP_COMPONENTS="Switch;Arc;Chart;Checkbox;Slider;Dropdownlist;Textarea;Roller;Keyboard;ProgressBar;Calendar;Line;Button;GIF;Image;Mask;Tabs;Text;View" \
             -DCMAKE_C_FLAGS=-DLV_DISABLE_API_MAPPING \
             -DCMAKE_CXX_FLAGS=-DLV_DISABLE_API_MAPPING
           cmake --build build-strict -j
+      - name: Run tests
+        run: yarn capture:screenshots
+      # Compile once more with the compatibility headers switched off. This is what
+      # a major LVGL bump will look like, and it catches names the grep above cannot
+      # see (macro expansions, names reached through other headers).
       - name: Upload test screenshots
         if: always()
         uses: actions/upload-artifact@v7
@@ -115,6 +122,16 @@ jobs:
             -DUSE_EXTERNAL_FFI=ON
       - name: Build lvgljs
         run: cmake --build build -j
+      # The simulator half of the deprecated-name guard; see the linux-device job.
+      - name: Build simulator without LVGL API mapping
+        run: |
+          cmake -B build-strict -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_LVGL_SIMULATOR=ON \
+            -DUSE_EXTERNAL_FFI=ON \
+            -DCMAKE_C_FLAGS=-DLV_DISABLE_API_MAPPING \
+            -DCMAKE_CXX_FLAGS=-DLV_DISABLE_API_MAPPING
+          cmake --build build-strict -j
       - name: Capture screenshots
         env:
           SCREENSHOT_USE_XVFB: '1'

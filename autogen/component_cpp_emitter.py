@@ -44,8 +44,9 @@ ENUM_TYPES = {
     "lv_arc_mode_t": {"int32"}, "lv_chart_type_t": {"int32"}, "lv_roller_mode_t": {"uint32"},
     "int32_t": {"uint32", "int32"}, "uint32_t": {"uint32", "int32"},
 }
-# 명세의 operation 값과 LVGL 함수 이름. v9 에서 clear 계열이 remove 로 바뀌었다.
-FLAG_OPS = {"add": "add", "clear": "remove"}
+# 명세의 operation 값에 대응하는 LVGL 함수. 이름을 조립하면 어느 검사도 그 토큰을
+# 볼 수 없으므로 통째로 적는다.
+FLAG_OPS = {"add": "lv_obj_add_flag", "clear": "lv_obj_remove_flag"}
 
 
 # Save generated files in one components directory without widget subdirectories.
@@ -361,7 +362,7 @@ def render_component(component: dict, template_dir: Path = TEMPLATE_DIR) -> tupl
     if constructor["group"]:
         setup.append("    lv_group_add_obj(lv_group_get_default(), this->instance);")
     for flag in constructor["flags"]:
-        setup.append(f'    lv_obj_{FLAG_OPS[flag["operation"]]}_flag(this->instance, {flag["flag"]});')
+        setup.append(f'    {FLAG_OPS[flag["operation"]]}(this->instance, {flag["flag"]});')
     if constructor["userData"]:
         setup.append("    lv_obj_set_user_data(this->instance, this);")
     for style in constructor.get("initStyles", []):

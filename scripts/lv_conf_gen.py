@@ -1069,7 +1069,7 @@ class FunctionArraySection:
 
 def detect_function_symbols(raw_text: str, prefix: str) -> list[str]:
     escaped = re.escape(prefix)
-    rx = re.compile(rf"^\s*(?:int32_t|lv_coord_t)\s+({escaped}[A-Za-z0-9_]+)\s*\(")
+    rx = re.compile(rf"^\s*int32_t\s+({escaped}[A-Za-z0-9_]+)\s*\(")
     names: list[str] = []
     seen: set[str] = set()
     for line in raw_text.splitlines():
