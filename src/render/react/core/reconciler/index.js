@@ -45,7 +45,7 @@ function detachInstance(instance) {
   const children = instance[HOST_CHILDREN];
   if (children) {
     // Close children before this instance. LVGL deletes all child lv_objs when a
-    // parent is lv_obj_del'd; child close() must run first while the parent still
+    // parent is lv_obj_delete'd; child close() must run first while the parent still
     // exists. Native removeChild does not reparent to the window root for this.
     for (const child of [...children]) {
       detachInstance(child);

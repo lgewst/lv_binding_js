@@ -10,7 +10,7 @@ TabView::TabView(std::string uid, uint32_t pos, uint32_t size, lv_obj_t* parent)
     lv_tabview_set_tab_bar_size(this->instance, (int32_t)size);
     lv_group_add_obj(lv_group_get_default(), this->instance);
 
-    lv_obj_clear_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_remove_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_CLICK_FOCUSABLE);
     lv_obj_set_user_data(this->instance, this);

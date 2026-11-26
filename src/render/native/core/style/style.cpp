@@ -147,7 +147,7 @@ static void CompSetDisplay (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, J
     std::string value = str;
     value.resize(len);
 
-    lv_obj_clear_flag(comp, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(comp, LV_OBJ_FLAG_HIDDEN);
 
     if (value == "flex") {
         lv_obj_set_layout(comp, LV_LAYOUT_FLEX);
@@ -193,7 +193,7 @@ static void CompSetOverFlowScrolling (lv_obj_t* comp, lv_style_t* style, JSConte
     if (x) {
         lv_obj_add_flag(comp, LV_OBJ_FLAG_SCROLL_MOMENTUM);
     } else {
-        lv_obj_clear_flag(comp, LV_OBJ_FLAG_SCROLL_MOMENTUM);
+        lv_obj_remove_flag(comp, LV_OBJ_FLAG_SCROLL_MOMENTUM);
     }
 };
 
@@ -202,7 +202,7 @@ static void CompSetOverflow (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, 
     JS_ToInt32(ctx, &x, obj);
 
     if (x) {
-        lv_obj_clear_flag(comp, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_remove_flag(comp, LV_OBJ_FLAG_SCROLLABLE);
     } else {
         lv_obj_add_flag(comp, LV_OBJ_FLAG_SCROLLABLE);
     }
@@ -227,7 +227,7 @@ static void CompScrollEnableSnap (lv_obj_t* comp, lv_style_t* style, JSContext* 
     JS_ToInt32(ctx, &x, obj);
 
     if (!x) {
-        lv_obj_clear_flag(comp, LV_OBJ_FLAG_SNAPPABLE);
+        lv_obj_remove_flag(comp, LV_OBJ_FLAG_SNAPPABLE);
     } else {
         lv_obj_add_flag(comp, LV_OBJ_FLAG_SNAPPABLE);
     }
@@ -251,7 +251,7 @@ static void CompSetImgRotate (lv_obj_t* comp, lv_style_t* style, JSContext* ctx,
     int x;
     JS_ToInt32(ctx, &x, obj);
 
-    lv_img_set_angle(comp, x);
+    lv_image_set_rotation(comp, x);
 };
 
 static void CompSetTransformOrigin (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, JSValue obj) {
@@ -271,7 +271,7 @@ static void CompSetTransformOrigin (lv_obj_t* comp, lv_style_t* style, JSContext
     JS_FreeValue(ctx, x_value);
     JS_FreeValue(ctx, y_value);
 
-    lv_img_set_pivot(comp, x, y);
+    lv_image_set_pivot(comp, x, y);
 };
 
 /* lv_chart_set_zoom_x/y() were removed in LVGL 9; the Chart component
@@ -318,7 +318,7 @@ static void CompSetPosition (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, 
     std::string value = str;
     value.resize(len);
 
-    lv_obj_clear_flag(comp, LV_OBJ_FLAG_FLOATING);
+    lv_obj_remove_flag(comp, LV_OBJ_FLAG_FLOATING);
     BasicComponent* instance = static_cast<BasicComponent*>(lv_obj_get_user_data(comp));
     instance->is_fixed = false;
     if (instance->parent_instance != nullptr) {
@@ -338,8 +338,8 @@ static void CompSetPosition (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, 
 static void CompGridColumnRow (lv_obj_t* comp, lv_style_t* style, JSContext* ctx, JSValue obj) {
     if (JS_IsArray(obj)) {
         BasicComponent* instance = static_cast<BasicComponent*>(lv_obj_get_user_data(comp));
-        const lv_coord_t* old_ptr1 = instance->grid_column_desc;
-        const lv_coord_t* old_ptr2 = instance->grid_row_desc;
+        const int32_t* old_ptr1 = instance->grid_column_desc;
+        const int32_t* old_ptr2 = instance->grid_row_desc;
 
         JSValue column_value = JS_GetPropertyUint32(ctx, obj, 0);
         JSValue row_value = JS_GetPropertyUint32(ctx, obj, 1);
@@ -350,7 +350,7 @@ static void CompGridColumnRow (lv_obj_t* comp, lv_style_t* style, JSContext* ctx
 
         JSValue column_len_value = JS_GetPropertyStr(ctx, column_value, "length");
         JS_ToInt32(ctx, &len, column_len_value);
-        lv_coord_t* column_ptr = static_cast<lv_coord_t*>(malloc((len + 1) * sizeof(lv_coord_t)));
+        int32_t* column_ptr = static_cast<int32_t*>(malloc((len + 1) * sizeof(int32_t)));
         for(int i=0; i < len; i++) {
             num_value = JS_GetPropertyUint32(ctx, column_value, i);
             JS_ToInt32(ctx, &num, num_value);
@@ -363,7 +363,7 @@ static void CompGridColumnRow (lv_obj_t* comp, lv_style_t* style, JSContext* ctx
 
         JSValue row_len_value = JS_GetPropertyStr(ctx, row_value, "length");
         JS_ToInt32(ctx, &len, row_len_value);
-        lv_coord_t* row_ptr = static_cast<lv_coord_t*>(malloc((len + 1) * sizeof(lv_coord_t)));
+        int32_t* row_ptr = static_cast<int32_t*>(malloc((len + 1) * sizeof(int32_t)));
         for(int i=0; i < len; i++) {
             num_value = JS_GetPropertyUint32(ctx, row_value, i);
             JS_ToInt32(ctx, &num, num_value);
@@ -379,10 +379,10 @@ static void CompGridColumnRow (lv_obj_t* comp, lv_style_t* style, JSContext* ctx
 
         lv_obj_set_grid_dsc_array(comp, column_ptr, row_ptr);
         if (old_ptr1) {
-            free((lv_coord_t*)(old_ptr1));
+            free((int32_t*)(old_ptr1));
         }
         if (old_ptr2) {
-            free((lv_coord_t*)(old_ptr2));
+            free((int32_t*)(old_ptr2));
         }
     }
 };

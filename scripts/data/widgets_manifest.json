@@ -2933,11 +2933,11 @@
             "userData": true,
             "afterCreate": [
               {
-                "function": "lv_calendar_header_dropdown_create",
+                "function": "lv_calendar_add_header_dropdown",
                 "arguments": []
               },
               {
-                "function": "lv_calendar_header_arrow_create",
+                "function": "lv_calendar_add_header_arrow",
                 "arguments": []
               }
             ]
@@ -2992,7 +2992,7 @@
             },
             {
               "method": "setShownMonth",
-              "function": "lv_calendar_set_showed_date",
+              "function": "lv_calendar_set_month_shown",
               "parameters": [
                 {
                   "name": "year",
@@ -3191,7 +3191,7 @@
       "reactName": "Button",
       "nativeClass": "Button",
       "nativeDir": "button",
-      "lvglCreate": "lv_btn_create",
+      "lvglCreate": "lv_button_create",
       "compType": "COMP_TYPE_BUTTON",
       "status": "common-only",
       "generate": {
@@ -3429,7 +3429,7 @@
       "reactName": "Image",
       "nativeClass": "Image",
       "nativeDir": "image",
-      "lvglCreate": "lv_img_create",
+      "lvglCreate": "lv_image_create",
       "compType": "COMP_TYPE_IMAGE",
       "status": "specified",
       "generate": {
@@ -3494,13 +3494,13 @@
                   "type": "size"
                 }
               ],
-              "function": "lv_img_set_src",
+              "function": "lv_image_set_src",
               "bufferMember": "image_buf",
               "descriptorMember": "image_desc"
             },
             {
               "method": "setSymbol",
-              "function": "lv_img_set_src",
+              "function": "lv_image_set_src",
               "parameters": [
                 {
                   "name": "str",

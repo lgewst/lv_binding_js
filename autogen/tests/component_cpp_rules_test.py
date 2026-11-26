@@ -104,7 +104,7 @@ class ComplexComponentRulesTest(unittest.TestCase):
         gif = self.load('GIF')
         first = next(m for m in image['methods'] if m['kind'] == 'imageBuffer')
         second = next(m for m in gif['methods'] if m['kind'] == 'imageBuffer')
-        a = rules.image_body(first).replace('image_buf', 'media_buf').replace('image_desc', 'media_desc').replace('lv_img_set_src', 'lv_media_set_src')
+        a = rules.image_body(first).replace('image_buf', 'media_buf').replace('image_desc', 'media_desc').replace('lv_image_set_src', 'lv_media_set_src')
         b = rules.image_body(second).replace('gif_buf', 'media_buf').replace('gif_desc', 'media_desc').replace('lv_gif_set_src', 'lv_media_set_src')
         self.assertEqual(a, b)
         source, header = core.render_component(image)

@@ -2,7 +2,7 @@
 
 extern "C" {
 
-LV_IMG_DECLARE(mouse_cursor_icon); /*Declare the image file.*/
+LV_IMAGE_DECLARE(mouse_cursor_icon); /*Declare the image file.*/
 
 }
 

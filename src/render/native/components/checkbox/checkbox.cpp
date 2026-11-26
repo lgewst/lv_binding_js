@@ -9,7 +9,7 @@ Checkbox::Checkbox(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_add_flag(this->instance, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-    lv_obj_clear_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_remove_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
     lv_obj_set_user_data(this->instance, this);
     this->initStyle(LV_PART_MAIN);
 };
@@ -22,7 +22,7 @@ void Checkbox::setChecked (bool payload) {
     if (payload) {
         lv_obj_add_state(this->instance, LV_STATE_CHECKED);
     } else {
-        lv_obj_clear_state(this->instance, LV_STATE_CHECKED);
+        lv_obj_remove_state(this->instance, LV_STATE_CHECKED);
     }
 };
 
@@ -30,7 +30,7 @@ void Checkbox::setDisabled (bool payload) {
     if (payload) {
         lv_obj_add_state(this->instance, LV_STATE_DISABLED);
     } else {
-        lv_obj_clear_state(this->instance, LV_STATE_DISABLED);
+        lv_obj_remove_state(this->instance, LV_STATE_DISABLED);
     }
 };
 

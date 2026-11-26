@@ -6,12 +6,12 @@ Calendar::Calendar(std::string uid, lv_obj_t* parent): BasicComponent(uid) {
 
     this->uid = uid;
     this->instance = lv_calendar_create(parent != nullptr ? parent : GetWindowInstance());
-    lv_calendar_header_dropdown_create(this->instance);
-    lv_calendar_header_arrow_create(this->instance);
+    lv_calendar_add_header_dropdown(this->instance);
+    lv_calendar_add_header_arrow(this->instance);
 
     lv_group_add_obj(lv_group_get_default(), this->instance);
 
-    lv_obj_clear_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_remove_flag(this->instance, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
 
     lv_obj_set_user_data(this->instance, this);
 };
@@ -21,7 +21,7 @@ void Calendar::setToday (uint32_t year, uint32_t month, uint32_t day) {
 };
 
 void Calendar::setShownMonth (uint32_t year, uint32_t month) {
-    lv_calendar_set_showed_date(this->instance, year, month);
+    lv_calendar_set_month_shown(this->instance, year, month);
 };
 
 void Calendar::setHighlightDates (std::vector<lv_calendar_date_t>& dates, int32_t num) {

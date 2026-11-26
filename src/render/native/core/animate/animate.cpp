@@ -118,7 +118,7 @@ static JSValue NativeAnimateStart(JSContext *ctx, JSValueConst this_val, int arg
         if (JS_IsNumber(readycb_value)) {
             JS_ToInt32(ctx, &readycb_uid, readycb_value);
             ref->readycb_uid = readycb_uid;
-            lv_anim_set_ready_cb(animate, Animate_Ready_Callback);
+            lv_anim_set_completed_cb(animate, Animate_Ready_Callback);
         }
         if (JS_IsBool(use_native_value)) {
             use_native = JS_ToBool(ctx, use_native_value);
@@ -162,7 +162,7 @@ static JSValue NativeAnimateStart(JSContext *ctx, JSValueConst this_val, int arg
         dura_value = JS_GetPropertyStr(ctx, argv[0], "duration");
         if (JS_IsNumber(dura_value)) {
             JS_ToInt32(ctx, &duration, dura_value);
-            lv_anim_set_time(animate, duration);
+            lv_anim_set_duration(animate, duration);
         }
         JS_FreeValue(ctx, dura_value);
 
@@ -186,14 +186,14 @@ static JSValue NativeAnimateStart(JSContext *ctx, JSValueConst this_val, int arg
         playback_delay_value = JS_GetPropertyStr(ctx, argv[0], "playBackDelay");
         if (JS_IsNumber(playback_delay_value)) {
             JS_ToInt32(ctx, &playback_delay, playback_delay_value);
-            lv_anim_set_playback_delay(animate, playback_delay);
+            lv_anim_set_reverse_delay(animate, playback_delay);
         }
         JS_FreeValue(ctx, playback_delay_value);
 
         playback_time_value = JS_GetPropertyStr(ctx, argv[0], "playBackTime");
         if (JS_IsNumber(playback_time_value)) {
             JS_ToInt32(ctx, &playback_time, playback_time_value);
-            lv_anim_set_playback_time(animate, playback_time);
+            lv_anim_set_reverse_duration(animate, playback_time);
         }
         JS_FreeValue(ctx, playback_time_value);
 
