@@ -1,9 +1,10 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
 import { CalendarComp, CalendarProps } from "./comp";
 
 export default class CalendarConfig implements LvgljsComponentConfig<CalendarProps, CalendarComp> {
   tagName = "Calendar";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -13,10 +14,11 @@ export default class CalendarConfig implements LvgljsComponentConfig<CalendarPro
     return instance;
   }
   commitMount(instance, newProps: CalendarProps, internalInstanceHandle) {}
-  commitUpdate(instance, updatePayload, oldProps: Partial<CalendarProps>, newProps: CalendarProps, finishedWork) {
+  commitUpdate(instance, updatePayload, oldProps: CalendarProps, newProps: CalendarProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
-  setProps(newProps: CalendarProps, oldProps: Partial<CalendarProps>) {}
+  commitUnmount(instance) {}
+  setProps(newProps: CalendarProps, oldProps: CalendarProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}
   appendChild(child) {}

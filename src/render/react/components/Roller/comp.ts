@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
@@ -12,16 +14,16 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeRoller = bridge.NativeRender.NativeComponents.Roller;
+const NativeComp = bridge.NativeRender.NativeComponents.Roller;
 
 export type RollerProps = CommonProps & {
   selectedStyle?: StyleProps;
   options: string[];
   selectIndex: number;
   visibleRowCount: number;
+  onChange?: (event: OnChangeEvent) => void;
   /** Makes the roller circular */
   infinity?: boolean;
-  onChange?: (event: OnChangeEvent) => void;
 };
 
 function setRollerProps(comp, newProps: RollerProps, oldProps: Partial<RollerProps>) {
@@ -36,19 +38,19 @@ function setRollerProps(comp, newProps: RollerProps, oldProps: Partial<RollerPro
         oldStyleSheet: oldProps.selectedStyle,
       });
     },
-    options(options) {
-      if (options !== oldProps.options && Array.isArray(options)) {
-        comp.setOptions(options, options.length, !!newProps.infinity);
+    options(arr) {
+      if (arr !== oldProps.options && Array.isArray(arr)) {
+        comp.setOptions(arr, arr.length, !!newProps.infinity);
       }
     },
-    selectIndex(selectIndex) {
-      if (selectIndex !== oldProps.selectIndex) {
-        comp.setSelectIndex(selectIndex);
+    selectIndex(val) {
+      if (val !== oldProps.selectIndex) {
+        comp.setSelectIndex(val);
       }
     },
-    visibleRowCount(count) {
-      if (count !== oldProps.visibleRowCount) {
-        comp.setVisibleRowCount(count);
+    visibleRowCount(val) {
+      if (val !== oldProps.visibleRowCount) {
+        comp.setVisibleRowCount(val);
       }
     },
     onChange(fn) {
@@ -63,7 +65,7 @@ function setRollerProps(comp, newProps: RollerProps, oldProps: Partial<RollerPro
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class RollerComp extends NativeRoller {
+export class RollerComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -82,7 +84,6 @@ export class RollerComp extends NativeRoller {
     setRollerProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Roller";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

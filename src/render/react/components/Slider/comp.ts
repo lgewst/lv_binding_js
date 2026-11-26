@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
 import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
 import {
@@ -12,7 +14,7 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeSlider = bridge.NativeRender.NativeComponents.Slider;
+const NativeComp = bridge.NativeRender.NativeComponents.Slider;
 
 export type SliderProps = CommonProps & {
   indicatorStyle?: StyleProps;
@@ -44,15 +46,6 @@ function setSliderProps(comp, newProps: SliderProps, oldProps: Partial<SliderPro
         compName: "Slider",
         styleType: STYLE_TYPE.PART_INDICATOR | STYLE_TYPE.STATE_PRESSED,
         oldStyleSheet: oldProps.onIndicatorPressedStyle,
-      });
-    },
-    onPressedStyle(styleSheet) {
-      setStyle({
-        comp,
-        styleSheet,
-        compName: "Slider",
-        styleType: STYLE_TYPE.STATE_PRESSED,
-        oldStyleSheet: oldProps.onPressedStyle,
       });
     },
     knobStyle(styleSheet) {
@@ -97,7 +90,7 @@ function setSliderProps(comp, newProps: SliderProps, oldProps: Partial<SliderPro
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class SliderComp extends NativeSlider {
+export class SliderComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -116,7 +109,6 @@ export class SliderComp extends NativeSlider {
     setSliderProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Slider";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

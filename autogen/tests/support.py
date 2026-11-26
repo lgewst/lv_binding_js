@@ -12,9 +12,9 @@ import component_ts_emitter as emitter
 import widget_ts_emitter as ts
 
 
-def write_manifest(folder: Path, widget: dict) -> Path:
+def write_manifest(folder: Path, *widgets: dict) -> Path:
     path = folder / "manifest.json"
-    path.write_text(json.dumps({"version": 2, "widgets": [widget]}), encoding="utf-8")
+    path.write_text(json.dumps({"version": 2, "widgets": list(widgets)}), encoding="utf-8")
     return path
 
 

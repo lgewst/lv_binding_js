@@ -1,5 +1,7 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { StyleProps } from "../../core/style";
-import { CommonComponentApi, CommonProps, OnChangeEvent } from "../common/index";
+import { CommonComponentApi, CommonProps, OnChangeEvent, OnClickEvent } from "../common/index";
 import {
   EVENTTYPE_MAP,
   STYLE_TYPE,
@@ -10,41 +12,33 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeView = bridge.NativeRender.NativeComponents.Textarea;
+const NativeComp = bridge.NativeRender.NativeComponents.Textarea;
 
 export type TextAreaProps = CommonProps & {
   placeholder: string;
-  /** `password` mode changes text to `*` */
-  mode?: "password" | "text";
   onFocusStyle: StyleProps;
   onChange?: (event: OnChangeEvent) => void;
-  onFocus?: (event: {
-    target: any,
-    currentTarget: any,
-    stopPropogation: () => void,
-  }) => void;
+  onFocus?: (event: OnClickEvent) => void;
   value: string;
   /** Virtual keyboard will auto raise up when focus on Input component */
   autoKeyBoard: boolean;
+  /** `password` mode changes text to `*` */
+  mode?: "password" | "text";
 };
 
-function setTextareaProps(comp, newProps: TextAreaProps, oldProps: Partial<TextAreaProps>) {
+function setTextAreaProps(comp, newProps: TextAreaProps, oldProps: Partial<TextAreaProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Textarea", comp, newProps, oldProps }),
-    placeholder(str) {
-      if (str !== oldProps.placeholder) {
-        comp.setPlaceHolder(str);
+    placeholder(val) {
+      if (val !== oldProps.placeholder) {
+        comp.setPlaceHolder(val);
       }
     },
-    mode(mode) {
-      if (mode === "password") {
-        comp.setPasswordMode(true);
-      } else if (oldProps.mode === "password") {
-        comp.setPasswordMode(false);
-      }
-    },
+    mode: manual.mode,
     onFocusStyle(styleSheet) {
       setStyle({
         comp,
@@ -60,14 +54,14 @@ function setTextareaProps(comp, newProps: TextAreaProps, oldProps: Partial<TextA
     onFocus(fn) {
       handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_FOCUSED);
     },
-    value(str) {
-      if (str !== oldProps.value) {
-        comp.setText(str);
+    value(val) {
+      if (val !== oldProps.value) {
+        comp.setText(val);
       }
     },
-    autoKeyBoard(payload) {
-      if (payload !== oldProps?.autoKeyBoard) {
-        comp.setAutoKeyboard(payload);
+    autoKeyBoard(val) {
+      if (val !== oldProps.autoKeyBoard) {
+        comp.setAutoKeyboard(val);
       }
     },
   };
@@ -79,11 +73,10 @@ function setTextareaProps(comp, newProps: TextAreaProps, oldProps: Partial<TextA
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class TextareaComp extends NativeView {
+export class TextareaComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
-
     super.setOneLine(false);
 
     const style = super.style;
@@ -97,7 +90,7 @@ export class TextareaComp extends NativeView {
     });
   }
   setProps(newProps: TextAreaProps, oldProps: Partial<TextAreaProps>) {
-    setTextareaProps(this, newProps, oldProps);
+    setTextAreaProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}

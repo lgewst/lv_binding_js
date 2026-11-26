@@ -1,6 +1,5 @@
-import { BUILT_IN_SYMBOL } from "../../core/style/symbol";
-import { isValidUrl } from "../../utils/helpers";
-import { fetchAssetBinary, loadLocalAsset } from "../../utils/assets";
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -12,9 +11,10 @@ import {
 } from "../config";
 
 import { GetBridge } from "../../core/bridge";
+import { manualSetters } from "./manual";
 
 const bridge = GetBridge();
-const NativeImage = bridge.NativeRender.NativeComponents.Image;
+const NativeComp = bridge.NativeRender.NativeComponents.Image;
 
 export type ImageProps = CommonProps & {
   /** GIF loading resource, support network url, local path, buildtin symbol */
@@ -22,27 +22,10 @@ export type ImageProps = CommonProps & {
 };
 
 function setImageProps(comp, newProps: ImageProps, oldProps: Partial<ImageProps>) {
+  const manual = manualSetters({ comp, newProps, oldProps });
   const setter = {
     ...CommonComponentApi({ compName: "Image", comp, newProps, oldProps }),
-    onClick(fn) {
-      handleEvent(comp, fn, EVENTTYPE_MAP.EVENT_CLICKED);
-    },
-    src(url) {
-      if (url && url !== oldProps.src) {
-        if (BUILT_IN_SYMBOL[url]) {
-          comp.setSymbol(BUILT_IN_SYMBOL[url]);
-          return;
-        }
-        if (!isValidUrl(url)) {
-          loadLocalAsset(url, "setImage error", (buffer) =>
-            comp.setImageBinary(buffer));
-        } else {
-          fetchAssetBinary(url)
-            .then((buffer) => comp.setImageBinary(buffer))
-            .catch(console.warn);
-        }
-      }
-    },
+    src: manual.src,
   };
   Object.keys(setter).forEach((key) => {
     if (newProps.hasOwnProperty(key)) {
@@ -52,7 +35,7 @@ function setImageProps(comp, newProps: ImageProps, oldProps: Partial<ImageProps>
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class ImageComp extends NativeImage {
+export class ImageComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -71,7 +54,6 @@ export class ImageComp extends NativeImage {
     setImageProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Image";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

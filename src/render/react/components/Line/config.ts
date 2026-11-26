@@ -1,9 +1,10 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
 import { LineComp, LineProps } from "./comp";
 
 export default class LineConfig implements LvgljsComponentConfig<LineProps, LineComp> {
   tagName = "Line";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -16,7 +17,8 @@ export default class LineConfig implements LvgljsComponentConfig<LineProps, Line
   commitUpdate(instance, updatePayload, oldProps: LineProps, newProps: LineProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
-  setProps(newProps: LineProps, oldProp: LineProps) {}
+  commitUnmount(instance) {}
+  setProps(newProps: LineProps, oldProps: LineProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}
   appendChild(child) {}

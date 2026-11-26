@@ -1,3 +1,5 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { CommonComponentApi, CommonProps } from "../common/index";
 import {
   EVENTTYPE_MAP,
@@ -11,7 +13,7 @@ import {
 import { GetBridge } from "../../core/bridge";
 
 const bridge = GetBridge();
-const NativeLine = bridge.NativeRender.NativeComponents.Line;
+const NativeComp = bridge.NativeRender.NativeComponents.Line;
 
 export type LineProps = CommonProps & {
   points: [number, number][];
@@ -19,13 +21,10 @@ export type LineProps = CommonProps & {
 
 function setLineProps(comp, newProps: LineProps, oldProps: Partial<LineProps>) {
   const setter = {
-    ...CommonComponentApi({ compName: "Keyboard", comp, newProps, oldProps }),
-    points(points) {
-      if (
-        (Array.isArray(points) && points !== oldProps?.points) ||
-        points?.length !== oldProps?.points?.length
-      ) {
-        comp.setPoints(points, points.length);
+    ...CommonComponentApi({ compName: "Line", comp, newProps, oldProps }),
+    points(arr) {
+      if (arr !== oldProps.points && Array.isArray(arr)) {
+        comp.setPoints(arr, arr.length);
       }
     },
   };
@@ -37,7 +36,7 @@ function setLineProps(comp, newProps: LineProps, oldProps: Partial<LineProps>) {
   applyDataPropsToDataset(comp, newProps);
 }
 
-export class LineComp extends NativeLine {
+export class LineComp extends NativeComp {
   constructor({ uid }) {
     super({ uid });
     this.uid = uid;
@@ -56,7 +55,6 @@ export class LineComp extends NativeLine {
     setLineProps(this, newProps, oldProps);
   }
   insertBefore(child, beforeChild) {}
-  static tagName = "Line";
   appendInitialChild(child) {}
   appendChild(child) {}
   close() {

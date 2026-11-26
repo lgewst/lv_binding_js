@@ -1,9 +1,10 @@
+// Generated from scripts/data/widgets_manifest.json. Do not edit by hand.
+// Regenerate with: python3 autogen/ts_emitter.py
 import { LvgljsComponentConfig } from "../config";
 import { ButtonComp, ButtonProps } from "./comp";
 
 export default class ButtonConfig implements LvgljsComponentConfig<ButtonProps, ButtonComp> {
   tagName = "Button";
-  native = null;
   shouldSetTextContent() {
     return false;
   }
@@ -16,6 +17,7 @@ export default class ButtonConfig implements LvgljsComponentConfig<ButtonProps, 
   commitUpdate(instance, updatePayload, oldProps: ButtonProps, newProps: ButtonProps, finishedWork) {
     instance.setProps(newProps, oldProps);
   }
+  commitUnmount(instance) {}
   setProps(newProps: ButtonProps, oldProps: ButtonProps) {}
   insertBefore(child, beforeChild) {}
   appendInitialChild(child) {}
