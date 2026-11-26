@@ -10,7 +10,7 @@
     "widget.generate": "실행할 emitter (cpp / ts / nativeClass)",
     "widget.props": "규칙으로 생성 가능한 prop. 배열 순서가 생성 코드의 순서가 된다",
     "widget.manual": "규칙으로 표현되지 않아 수작업으로 남기는 prop. reason 에 근거를 적는다",
-    "widget.passive": "Props 타입에 선언되어 있으나 setProps 경로가 없는 prop. readBy 에 이 값을 읽는 다른 prop 을 적는다",
+    "widget.passive": "Props 타입에 선언되어 있으나 setProps 경로가 없는 prop. readBy 에 이 값을 읽는 다른 prop 을 적는다. 세터는 생성하지 않지만 Props 타입에는 그대로 기록한다",
     "widget.notes": "명세 작성 중 발견한 기존 코드의 이상 징후",
     "prop.name": "React prop 이름. oldProps 비교 키로도 쓰인다",
     "prop.tsType": "<Name>Props 에 기록할 TypeScript 타입",
@@ -60,7 +60,12 @@
     "cppBinding.component.features": "chartLayout은 축 배치와 확대, focusKeyboard는 키보드 콜백과 수명 관리, overlayStyle은 화면 덮개 스타일 양식. 생성 시 원본 .cpp/.hpp를 읽지 않고 공통 양식에서 생성.",
     "cppBinding.component.members": "보관할 멤버의 name, type과 선택적인 initial. freeMembers는 해제할 이미지 포인터 목록. 포인터는 기본 nullptr로 초기화.",
     "cppBinding.component.nativeMethods": "기존 C++에만 있는 메서드의 name과 marshal. JS 공개 메서드는 추가하지 않음.",
-    "cppBinding.component.calls.targetMember": "instance 대신 보관한 LVGL 객체에 호출할 때 지정. guard=target으로 객체 수명 검사 필수."
+    "cppBinding.component.calls.targetMember": "instance 대신 보관한 LVGL 객체에 호출할 때 지정. guard=target으로 객체 수명 검사 필수.",
+    "prop.behavior.mapValues": "enumMap 전용. 조회표의 키와 lv_conf 상수 이름. TS emitter 가 이 표를 생성한다",
+    "prop.required": "true 면 Props 타입에 ? 없이 쓴다. 기존 수작업 타입을 보존하기 위한 필드",
+    "prop.doc": "Props 타입에 붙는 한 줄 JSDoc",
+    "widget.reactClass": "React 컴포넌트 클래스 본문의 사실. 수작업 코드에서 읽어 적었다. children: full(insertChildBefore 까지 위임) / append(appendChild 만 위임) / none(모두 빈 메서드). movement: delegate(상위 호출) / block(빈 메서드). styleResetOldSheet: setStyle 메서드가 oldStyleSheet 로 넘기는 값. constructorCalls: 생성자에서 호출하는 네이티브 메서드. close: delegate(상위 호출) / block(빈 메서드). nativeKey: NativeComponents 의 키 (reactName 과 다를 때만). propsType: Props 타입 이름 (reactName+Props 와 다를 때만). constructorProps: 생성자 인자로 받아 super 로 넘기는 prop. children=manual 이면 자식 처리 세 메서드를 manual.ts 의 manualChildren 에 위임한다 stashProps 는 setProps 진입 시 인스턴스에 얹는 prop, instanceFields 는 생성자에서 세우는 필드다.",
+    "prop.behavior.mapSource": "enumMap 조회표의 값이 오는 모듈 심볼. 기본은 lv_conf, 다른 값이면 core/lv_types 의 해당 상수표에서 가져온다"
   },
   "kinds": {
     "stateToggle": {
@@ -106,7 +111,8 @@
       "요약": "길이 고정 배열을 분해해 전달",
       "필드": {
         "elements": "원소 개수",
-        "callStyle": "array(배열 그대로) / spread(원소별 인자)"
+        "callStyle": "array(배열 그대로) / spread(원소별 인자)",
+        "elementNames": "분해할 원소 이름. 생략하면 min·max"
       },
       "TS": "원소별 oldProps 비교 후 comp.<bridgeMethod>(...)",
       "C++": "JS 배열에서 원소를 꺼내 <cppMethod> 호출",
@@ -125,7 +131,8 @@
     "enumMap": {
       "요약": "문자열을 조회표로 상수에 대응",
       "필드": {
-        "map": "comp.ts 내 조회표 이름"
+        "map": "comp.ts 내 조회표 이름",
+        "mapValues": "조회표의 키와 lv_conf 상수 이름"
       },
       "TS": "if (map[val] !== undefined) { comp.<bridgeMethod>(map[val]); }",
       "C++": "정수로 변환 후 <cppMethod> 호출",
@@ -172,7 +179,9 @@
           "cppMethod": "setValue",
           "behavior": {
             "kind": "stateToggle",
-            "state": "LV_STATE_CHECKED"
+            "state": "LV_STATE_CHECKED",
+            "compare": "loose",
+            "guard": "number"
           },
           "lifecycle": "update"
         },
@@ -188,7 +197,6 @@
           "lifecycle": "update"
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "backgroundImage",
@@ -216,6 +224,12 @@
           },
           "emptyStyleHook": true
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
       }
     },
     {
@@ -227,7 +241,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -367,7 +381,12 @@
           "bridgeMethod": "setMode",
           "behavior": {
             "kind": "enumMap",
-            "map": "modes"
+            "map": "modes",
+            "mapValues": {
+              "normal": "LV_ARC_MODE_NORMAL",
+              "symmetrical": "LV_ARC_MODE_SYMMETRICAL",
+              "reverse": "LV_ARC_MODE_REVERSE"
+            }
           },
           "lifecycle": "update"
         },
@@ -383,7 +402,6 @@
           "lifecycle": "update"
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "backgroundImage",
@@ -623,6 +641,12 @@
           ],
           "windowsAlias": "ArcShape"
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -634,7 +658,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "notes": [
@@ -668,7 +692,14 @@
           "cppMethod": "setType",
           "behavior": {
             "kind": "enumMap",
-            "map": "chartType"
+            "map": "chartType",
+            "mapValues": {
+              "none": "LV_CHART_TYPE_NONE",
+              "line": "LV_CHART_TYPE_LINE",
+              "bar": "LV_CHART_TYPE_BAR",
+              "scatter": "LV_CHART_TYPE_SCATTER"
+            },
+            "compare": "none"
           },
           "lifecycle": "update"
         },
@@ -786,53 +817,6 @@
             "callStyle": "array"
           },
           "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "scatterData",
-          "tsType": "any[]",
-          "reason": "중첩 배열을 평탄화하고 color 변환"
-        },
-        {
-          "name": "leftAxisOption",
-          "tsType": "any",
-          "reason": "필수 5개 키 존재 검사 후 호출"
-        },
-        {
-          "name": "leftAxisData",
-          "tsType": "any[]",
-          "reason": "원소별 color 를 colorTransform 으로 변환"
-        },
-        {
-          "name": "bottomAxisOption",
-          "tsType": "any",
-          "reason": "필수 5개 키 존재 검사 후 호출"
-        },
-        {
-          "name": "bottomAxisData",
-          "tsType": "any[]",
-          "reason": "원소별 color 를 colorTransform 으로 변환"
-        },
-        {
-          "name": "rightAxisOption",
-          "tsType": "any",
-          "reason": "필수 5개 키 존재 검사 후 호출"
-        },
-        {
-          "name": "rightAxisData",
-          "tsType": "any[]",
-          "reason": "원소별 color 를 colorTransform 으로 변환"
-        },
-        {
-          "name": "topAxisOption",
-          "tsType": "any",
-          "reason": "필수 5개 키 존재 검사 후 호출"
-        },
-        {
-          "name": "topAxisData",
-          "tsType": "any[]",
-          "reason": "원소별 color 를 colorTransform 으로 변환"
         }
       ],
       "passive": [
@@ -1318,7 +1302,69 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "scatterData",
+          "tsType": "any[]",
+          "reason": "중첩 배열을 평탄화하고 color 변환",
+          "after": "pointNum"
+        },
+        {
+          "name": "leftAxisOption",
+          "tsType": "any",
+          "reason": "필수 5개 키 존재 검사 후 호출",
+          "after": "scatterData"
+        },
+        {
+          "name": "leftAxisData",
+          "tsType": "any[]",
+          "reason": "원소별 color 를 colorTransform 으로 변환",
+          "after": "leftAxisOption"
+        },
+        {
+          "name": "bottomAxisOption",
+          "tsType": "any",
+          "reason": "필수 5개 키 존재 검사 후 호출",
+          "after": "leftAxisData"
+        },
+        {
+          "name": "bottomAxisData",
+          "tsType": "any[]",
+          "reason": "원소별 color 를 colorTransform 으로 변환",
+          "after": "bottomAxisOption"
+        },
+        {
+          "name": "rightAxisOption",
+          "tsType": "any",
+          "reason": "필수 5개 키 존재 검사 후 호출",
+          "after": "bottomAxisData"
+        },
+        {
+          "name": "rightAxisData",
+          "tsType": "any[]",
+          "reason": "원소별 color 를 colorTransform 으로 변환",
+          "after": "rightAxisOption"
+        },
+        {
+          "name": "topAxisOption",
+          "tsType": "any",
+          "reason": "필수 5개 키 존재 검사 후 호출",
+          "after": "rightAxisData"
+        },
+        {
+          "name": "topAxisData",
+          "tsType": "any[]",
+          "reason": "원소별 color 를 colorTransform 으로 변환",
+          "after": "topAxisOption"
+        }
+      ]
     },
     {
       "reactName": "Input",
@@ -1330,7 +1376,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": false
       },
       "notes": [
@@ -1346,7 +1392,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "maxlength",
@@ -1357,7 +1404,9 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true,
+          "doc": "Maximum number of characters"
         },
         {
           "name": "onChange",
@@ -1370,7 +1419,7 @@
         },
         {
           "name": "onFocus",
-          "tsType": "unknown",
+          "tsType": "(event: OnClickEvent) => void",
           "behavior": {
             "kind": "event",
             "event": "EVENT_FOCUSED"
@@ -1379,7 +1428,7 @@
         },
         {
           "name": "onBlur",
-          "tsType": "unknown",
+          "tsType": "(event: OnClickEvent) => void",
           "behavior": {
             "kind": "event",
             "event": "EVENT_DEFOCUSED"
@@ -1393,7 +1442,8 @@
             "kind": "styleState",
             "styleType": "STATE_FOCUSED"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "value",
@@ -1404,7 +1454,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "autoKeyBoard",
@@ -1414,19 +1465,38 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "mode",
-          "tsType": "\"password\" | \"text\"",
-          "reason": "password 문자열 진입/이탈을 각각 다른 호출로 처리"
+          "lifecycle": "update",
+          "required": true,
+          "doc": "Virtual keyboard will auto raise up when focus on Input component"
         }
       ],
       "cppBinding": {
         "sharedWith": "Textarea"
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "constructorCalls": [
+          {
+            "method": "setOneLine",
+            "args": [
+              "true"
+            ]
+          }
+        ],
+        "close": "delegate",
+        "nativeKey": "Textarea"
+      },
+      "manual": [
+        {
+          "name": "mode",
+          "tsType": "\"password\" | \"text\"",
+          "doc": "`password` mode changes text to `*`",
+          "reason": "password 문자열 진입/이탈을 각각 다른 호출로 처리",
+          "after": "placeholder"
+        }
+      ]
     },
     {
       "reactName": "Checkbox",
@@ -1437,7 +1507,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -1514,7 +1584,6 @@
           "lifecycle": "update"
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "backgroundImage",
@@ -1563,6 +1632,12 @@
             }
           ]
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
       }
     },
     {
@@ -1574,7 +1649,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -1639,7 +1714,8 @@
             "elements": 2,
             "callStyle": "array"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "value",
@@ -1651,10 +1727,11 @@
             "guard": "number",
             "compare": "loose"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true,
+          "doc": "Must be within the defined range"
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "backgroundImage",
@@ -1737,6 +1814,12 @@
             }
           ]
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -1748,7 +1831,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -1761,7 +1844,8 @@
             "kind": "options",
             "lengthArg": true
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "selectIndex",
@@ -1771,7 +1855,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "text",
@@ -1782,7 +1867,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "doc": "If the text is null the selected option is displayed on the items"
         },
         {
           "name": "direction",
@@ -1793,7 +1879,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "highlightSelect",
@@ -1804,7 +1891,8 @@
             "kind": "value",
             "compare": "loose"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "onChange",
@@ -1814,13 +1902,6 @@
             "event": "EVENT_VALUE_CHANGED"
           },
           "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "arrow",
-          "tsType": "typeof EDropdownListArrowDirection[keyof typeof EDropdownListArrowDirection]",
-          "reason": "typeof 검사 후 호출"
         }
       ],
       "cppBinding": {
@@ -2000,7 +2081,23 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate",
+        "propsType": "DropdownListProps"
+      },
+      "manual": [
+        {
+          "name": "arrow",
+          "tsType": "typeof EDropdownListArrowDirection[keyof typeof EDropdownListArrowDirection]",
+          "required": true,
+          "reason": "typeof 검사 후 호출",
+          "after": "items"
+        }
+      ]
     },
     {
       "reactName": "Textarea",
@@ -2011,7 +2108,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -2024,7 +2121,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "onFocusStyle",
@@ -2033,7 +2131,8 @@
             "kind": "styleState",
             "styleType": "STATE_FOCUSED"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "onChange",
@@ -2046,7 +2145,7 @@
         },
         {
           "name": "onFocus",
-          "tsType": "unknown",
+          "tsType": "(event: OnClickEvent) => void",
           "behavior": {
             "kind": "event",
             "event": "EVENT_FOCUSED"
@@ -2062,7 +2161,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "autoKeyBoard",
@@ -2072,14 +2172,9 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "mode",
-          "tsType": "\"password\" | \"text\"",
-          "reason": "password 문자열 진입/이탈을 각각 다른 호출로 처리"
+          "lifecycle": "update",
+          "required": true,
+          "doc": "Virtual keyboard will auto raise up when focus on Input component"
         }
       ],
       "cppBinding": {
@@ -2263,7 +2358,31 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "constructorCalls": [
+          {
+            "method": "setOneLine",
+            "args": [
+              "false"
+            ]
+          }
+        ],
+        "close": "block",
+        "propsType": "TextAreaProps"
+      },
+      "manual": [
+        {
+          "name": "mode",
+          "tsType": "\"password\" | \"text\"",
+          "doc": "`password` mode changes text to `*`",
+          "reason": "password 문자열 진입/이탈을 각각 다른 호출로 처리",
+          "after": "placeholder"
+        }
+      ]
     },
     {
       "reactName": "Roller",
@@ -2274,7 +2393,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -2302,7 +2421,8 @@
               }
             ]
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "selectIndex",
@@ -2313,7 +2433,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "visibleRowCount",
@@ -2324,7 +2445,8 @@
             "kind": "value",
             "compare": "strict"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "onChange",
@@ -2336,13 +2458,13 @@
           "lifecycle": "update"
         }
       ],
-      "manual": [],
       "passive": [
         {
           "name": "infinity",
           "tsType": "boolean",
           "readBy": "options",
-          "note": "options 세터의 세 번째 인자로만 읽힌다. 단독 변경은 반영되지 않는다"
+          "note": "options 세터의 세 번째 인자로만 읽힌다. 단독 변경은 반영되지 않는다",
+          "doc": "Makes the roller circular"
         }
       ],
       "cppBinding": {
@@ -2436,6 +2558,12 @@
             }
           ]
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -2447,7 +2575,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "notes": [
@@ -2456,14 +2584,22 @@
       "props": [
         {
           "name": "mode",
-          "tsType": "typeof modes",
+          "tsType": "\"lower\" | \"upper\" | \"special\" | \"number\"",
           "bridgeMethod": "setMode",
           "cppMethod": "setMode",
           "behavior": {
             "kind": "enumMap",
-            "map": "modes"
+            "map": "modes",
+            "mapValues": {
+              "lower": "LV_KEYBOARD_MODE_TEXT_LOWER",
+              "upper": "LV_KEYBOARD_MODE_TEXT_UPPER",
+              "special": "LV_KEYBOARD_MODE_SPECIAL",
+              "number": "LV_KEYBOARD_MODE_NUMBER"
+            }
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true,
+          "typeNote": "수작업 타입 typeof modes 는 조회표 객체라 틀렸다. 키 union 유지."
         },
         {
           "name": "onClose",
@@ -2482,13 +2618,6 @@
             "event": "EVENT_READY"
           },
           "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "textarea",
-          "tsType": "InputComp",
-          "reason": "다른 컴포넌트 인스턴스를 uid 로 비교"
         }
       ],
       "cppBinding": {
@@ -2559,7 +2688,22 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "textarea",
+          "tsType": "InputComp",
+          "required": true,
+          "reason": "다른 컴포넌트 인스턴스를 uid 로 비교",
+          "after": "mode"
+        }
+      ]
     },
     {
       "reactName": "ProgressBar",
@@ -2570,7 +2714,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "notes": [
@@ -2602,7 +2746,8 @@
               }
             ]
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         },
         {
           "name": "range",
@@ -2614,10 +2759,10 @@
             "elements": 2,
             "callStyle": "spread"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         }
       ],
-      "manual": [],
       "passive": [
         {
           "name": "animationTime",
@@ -2716,7 +2861,20 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "style",
+          "tsType": "StyleProps",
+          "reason": "공통 prop style 을 재정의하고, setStyle 호출 직전 animationTime 을 styleSheet['style-transition-time'] 에 주입한다"
+        }
+      ]
     },
     {
       "reactName": "Calendar",
@@ -2727,7 +2885,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -2739,23 +2897,6 @@
             "event": "EVENT_VALUE_CHANGED"
           },
           "lifecycle": "update"
-        }
-      ],
-      "manual": [
-        {
-          "name": "today",
-          "tsType": "string",
-          "reason": "JS Date 를 연·월·일 3개 인자로 분해"
-        },
-        {
-          "name": "shownMonth",
-          "tsType": "string",
-          "reason": "JS Date 를 연·월 2개 인자로 분해"
-        },
-        {
-          "name": "highLightDates",
-          "tsType": "string[]",
-          "reason": "배열 각 원소를 Date 로 변환 후 [y,m,d] 로 재구성"
         }
       ],
       "cppBinding": {
@@ -2879,7 +3020,33 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "today",
+          "tsType": "string",
+          "reason": "JS Date 를 연·월·일 3개 인자로 분해",
+          "after": "onChange"
+        },
+        {
+          "name": "shownMonth",
+          "tsType": "string",
+          "reason": "JS Date 를 연·월 2개 인자로 분해",
+          "after": "today"
+        },
+        {
+          "name": "highLightDates",
+          "tsType": "string[]",
+          "reason": "배열 각 원소를 Date 로 변환 후 [y,m,d] 로 재구성",
+          "after": "shownMonth"
+        }
+      ]
     },
     {
       "reactName": "Line",
@@ -2890,7 +3057,7 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [
@@ -2903,10 +3070,10 @@
             "kind": "options",
             "lengthArg": true
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "alignment",
@@ -2967,6 +3134,12 @@
             }
           ]
         }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -2982,7 +3155,8 @@
         "nativeClass": false
       },
       "notes": [
-        "window.cpp 에서 COMP_TYPE_* 설정을 찾지 못함"
+        "window.cpp 에서 COMP_TYPE_* 설정을 찾지 못함",
+        "React 생성 제외: index.ts 에서 주석 처리되어 등록되지 않는다"
       ],
       "props": [
         {
@@ -2993,10 +3167,10 @@
             "kind": "value",
             "compare": "loose"
           },
-          "lifecycle": "update"
+          "lifecycle": "update",
+          "required": true
         }
       ],
-      "manual": [],
       "cppBinding": {
         "features": [
           "children"
@@ -3005,6 +3179,12 @@
         "issues": [
           "props.title.bridgeMethod=setTitle에 대응하는 C++ 공개 메서드가 없다. Window 전용 wrapper 생성·빌드에는 별도 구현이 필요하다."
         ]
+      },
+      "reactClass": {
+        "children": "append",
+        "movement": "none",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
       }
     },
     {
@@ -3016,11 +3196,10 @@
       "status": "common-only",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [],
       "cppBinding": {
         "features": [
           "children",
@@ -3053,6 +3232,12 @@
           "emptyStyleHook": false,
           "calls": []
         }
+      },
+      "reactClass": {
+        "children": "append",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -3068,7 +3253,6 @@
         "nativeClass": false
       },
       "props": [],
-      "manual": [],
       "passive": [
         {
           "name": "onClick",
@@ -3091,6 +3275,16 @@
       ],
       "cppBinding": {
         "unavailableReason": "CanvasComp는 내부적으로 Button을 상속하지만 공개 index.ts에 Canvas가 등록되지 않고 CanvasContext.createRect와 draw도 비어 있다. 완성된 Canvas 바인딩이 없어 기존/생성 화면 비교 대상에서 제외한다."
+      },
+      "notes": [
+        "React 생성 제외: index.ts 에 등록되지 않는다. setter 를 접근자로 선언하고 Object.assign 으로 적용해 다른 컴포넌트와 구조가 다르다"
+      ],
+      "reactClass": {
+        "children": "append",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate",
+        "nativeKey": "Button"
       }
     },
     {
@@ -3102,22 +3296,10 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [
-        {
-          "name": "src",
-          "tsType": null,
-          "reason": "내장 심볼 조회 → 로컬 asset 비동기 로드 → 원격 fetch 3분기"
-        },
-        {
-          "name": "paused",
-          "tsType": null,
-          "reason": "외부 헬퍼 applyGIF 호출, oldProps 비교 없음"
-        }
-      ],
       "cppBinding": {
         "nativeClass": "GIF",
         "features": [
@@ -3221,7 +3403,27 @@
             "gif_desc"
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "src",
+          "tsType": "string",
+          "required": true,
+          "reason": "내장 심볼 조회 → 로컬 asset 비동기 로드 → 원격 fetch 3분기"
+        },
+        {
+          "name": "paused",
+          "tsType": "boolean",
+          "reason": "외부 헬퍼 applyGIF 호출, oldProps 비교 없음",
+          "after": "src"
+        }
+      ]
     },
     {
       "reactName": "Image",
@@ -3232,17 +3434,10 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [
-        {
-          "name": "src",
-          "tsType": "string",
-          "reason": "내장 심볼 조회 → 로컬 asset 비동기 로드 → 원격 fetch 3분기"
-        }
-      ],
       "cppBinding": {
         "features": [
           "alignment",
@@ -3345,7 +3540,22 @@
             "image_desc"
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "src",
+          "tsType": "string",
+          "required": true,
+          "doc": "GIF loading resource, support network url, local path, buildtin symbol",
+          "reason": "내장 심볼 조회 → 로컬 asset 비동기 로드 → 원격 fetch 3분기"
+        }
+      ]
     },
     {
       "reactName": "Mask",
@@ -3356,11 +3566,10 @@
       "status": "common-only",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [],
       "cppBinding": {
         "features": [
           "children"
@@ -3394,6 +3603,12 @@
             "overlayStyle"
           ]
         }
+      },
+      "reactClass": {
+        "children": "append",
+        "movement": "block",
+        "styleResetOldSheet": "null",
+        "close": "delegate"
       }
     },
     {
@@ -3405,38 +3620,13 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "notes": [
         "tabs · tabPosition · tabSize 는 Props 타입에 선언되어 있으나 setProps 경로가 비어 있다. 생성자에서만 소비된다"
       ],
       "props": [],
-      "manual": [
-        {
-          "name": "tabs",
-          "tsType": "string[]",
-          "lifecycle": "create",
-          "reason": "setProps 경로가 없고 생성자에서만 소비된다"
-        },
-        {
-          "name": "tabPosition",
-          "tsType": "\"left\" | \"top\" | \"right\" | \"bottom\"",
-          "lifecycle": "create",
-          "behavior": {
-            "kind": "enumMap",
-            "map": "tabPositionObj"
-          },
-          "reason": "setProps 경로가 없고 생성자에서만 소비된다"
-        },
-        {
-          "name": "tabSize",
-          "tsType": "number",
-          "lifecycle": "create",
-          "default": 0,
-          "reason": "setProps 경로가 없고 생성자에서만 소비된다"
-        }
-      ],
       "cppBinding": {
         "features": [
           "children",
@@ -3547,7 +3737,49 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "manual",
+        "movement": "delegate",
+        "styleResetOldSheet": "null",
+        "close": "delegate",
+        "nativeKey": "TabView",
+        "constructorProps": [
+          {
+            "name": "tabPosition",
+            "map": "tabPositionObj",
+            "mapSource": "LV_DIR_MAP",
+            "mapValues": {
+              "left": "left",
+              "top": "top",
+              "right": "right",
+              "bottom": "bottom"
+            },
+            "fallback": "top",
+            "tsType": "\"left\" | \"top\" | \"right\" | \"bottom\"",
+            "required": true
+          },
+          {
+            "name": "tabSize",
+            "default": "0",
+            "tsType": "number"
+          }
+        ],
+        "stashProps": [
+          "tabs"
+        ],
+        "instanceFields": {
+          "currentAppendIndex": "0"
+        }
+      },
+      "passive": [
+        {
+          "name": "tabs",
+          "tsType": "string[]",
+          "required": true,
+          "note": "setProps 진입 시 인스턴스에 통째로 보관한다. 자식 훅이 탭 이름으로 읽는다."
+        }
+      ]
     },
     {
       "reactName": "Text",
@@ -3558,17 +3790,10 @@
       "status": "specified",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [
-        {
-          "name": "children",
-          "tsType": "string | number | (string | number)[]",
-          "reason": "string·number·배열 3분기 후 join"
-        }
-      ],
       "cppBinding": {
         "features": [
           "alignment",
@@ -3623,7 +3848,21 @@
             }
           ]
         }
-      }
+      },
+      "reactClass": {
+        "children": "none",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
+      },
+      "manual": [
+        {
+          "name": "children",
+          "tsType": "string | number | (string | number)[]",
+          "required": true,
+          "reason": "string·number·배열 3분기 후 join"
+        }
+      ]
     },
     {
       "reactName": "View",
@@ -3634,11 +3873,10 @@
       "status": "common-only",
       "generate": {
         "cpp": false,
-        "ts": false,
+        "ts": true,
         "nativeClass": true
       },
       "props": [],
-      "manual": [],
       "cppBinding": {
         "features": [
           "children",
@@ -3668,6 +3906,12 @@
           "emptyStyleHook": false,
           "calls": []
         }
+      },
+      "reactClass": {
+        "children": "full",
+        "movement": "delegate",
+        "styleResetOldSheet": "{}",
+        "close": "delegate"
       }
     }
   ]

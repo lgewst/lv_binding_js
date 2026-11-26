@@ -47,6 +47,12 @@ jobs:
       # gen:all:check - fails fast if generated files or doc/ markdown are out of date.
       - name: gen:all:check
         run: npm run gen:all:check
+      # The emitters' own tests, and the comparison of every generated React
+      # component against its hand-written one. Neither needs a build.
+      - name: autogen unit tests
+        run: python3 -m unittest discover -s autogen/tests -p '*_test.py'
+      - name: autogen react parity
+        run: python3 test/autogen/run.py --suite react
       - name: Bundle the React UI bindings, demos and tests
         run: yarn run build
       - name: Configure
